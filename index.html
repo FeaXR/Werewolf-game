@@ -1,0 +1,440 @@
+<script>
+function getAllUrlParams(url) {
+
+  // get query string from url (optional) or window
+  var queryString = url ? url.split('?')[1] : window.location.search.slice(1);
+
+  // we'll store the parameters here
+  var obj = {};
+
+  // if query string exists
+  if (queryString) {
+
+    // stuff after # is not part of query string, so get rid of it
+    queryString = queryString.split('#')[0];
+
+    // split our query string into its component parts
+    var arr = queryString.split('&');
+
+    for (var i = 0; i < arr.length; i++) {
+      // separate the keys and the values
+      var a = arr[i].split('=');
+
+      // set parameter name and value (use 'true' if empty)
+      var paramName = a[0];
+      var paramValue = typeof (a[1]) === 'undefined' ? true : a[1];
+
+      // (optional) keep case consistent
+      paramName = paramName.toLowerCase();
+      if (typeof paramValue === 'string') paramValue = paramValue.toLowerCase();
+
+      // if the paramName ends with square brackets, e.g. colors[] or colors[2]
+      if (paramName.match(/\[(\d+)?\]$/)) {
+
+        // create key if it doesn't exist
+        var key = paramName.replace(/\[(\d+)?\]/, '');
+        if (!obj[key]) obj[key] = [];
+
+        // if it's an indexed array e.g. colors[2]
+        if (paramName.match(/\[\d+\]$/)) {
+          // get the index value and add the entry at the appropriate position
+          var index = /\[(\d+)\]/.exec(paramName)[1];
+          obj[key][index] = paramValue;
+        } else {
+          // otherwise add the value to the end of the array
+          obj[key].push(paramValue);
+        }
+      } else {
+        // we're dealing with a string
+        if (!obj[paramName]) {
+          // if it doesn't exist, create property
+          obj[paramName] = paramValue;
+        } else if (obj[paramName] && typeof obj[paramName] === 'string'){
+          // if property does exist and it's a string, convert it to an array
+          obj[paramName] = [obj[paramName]];
+          obj[paramName].push(paramValue);
+        } else {
+          // otherwise add the property
+          obj[paramName].push(paramValue);
+        }
+      }
+    }
+  }
+
+  return obj;
+}
+</script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Character Grid</title>
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    background-color: #f5f5f5;
+  }
+
+  h1 { margin-bottom: 16px; }
+
+  .grid-container {
+    display: grid;
+    grid-template-columns: 2fr 1.5fr 1fr;
+    gap: 8px;
+    align-items: center;
+    max-width: 1400px;
+  }
+
+  .grid-header {
+    font-weight: bold;
+    background-color: #ddd;
+    padding: 6px 8px;
+    border-radius: 4px;
+    text-align: center;
+  }
+
+  .grid-item {
+    background-color: #fff;
+    padding: 6px 8px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+  }
+
+  input[type="text"], select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 4px 6px;
+  }
+
+  .checkbox-center {
+    text-align: center;
+  }
+
+  .checkbox-center input {
+    transform: scale(1.2);
+  }
+
+  .controls {
+    margin-top: 16px;
+  }
+
+  button {
+    padding: 6px 10px;
+    border-radius: 4px;
+    border: 1px solid #888;
+    background-color: #eee;
+    cursor: pointer;
+  }
+
+  button:hover {
+    background-color: #ddd;
+  }
+
+  .remove-btn {
+    background-color: #ffdddd;
+    border-color: #cc8888;
+  }
+
+  .remove-btn:hover {
+    background-color: #ffcccc;
+  }
+
+  /* Collapsible sections */
+  .collapsible {
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #fff;
+    margin-top: 20px;
+    overflow: hidden;
+  }
+
+  .collapsible-header {
+    padding: 10px;
+    background: #e6e6e6;
+    cursor: pointer;
+    font-weight: bold;
+    user-select: none;
+  }
+
+  .collapsible-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease-out;
+    padding: 0 10px;
+  }
+
+  .collapsible.open .collapsible-content {
+    padding: 10px;
+    max-height: 500px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Character Setup</h1>
+
+<form id="charForm">
+  <div class="grid-container" id="playerGrid">
+    <!-- Headers and rows dynamically generated -->
+  </div>
+
+  <div class="controls">
+    <button type="button" id="addPlayerBtn">Add Player</button>
+    <button type="button" id="clearBtn">Clear</button>
+    <button type="submit">Save</button>
+  </div>
+</form>
+
+<!-- ROLE MANAGER -->
+<div class="collapsible" id="roleManager">
+  <div class="collapsible-header">Manage Roles</div>
+  <div class="collapsible-content">
+    <input type="text" id="newRoleInput" placeholder="New role name">
+    <button type="button" id="addRoleBtn">Add Role</button>
+
+    <h3>Existing Roles</h3>
+    <div id="roleList"></div>
+  </div>
+</div>
+
+<!-- STATUS EFFECT MANAGER -->
+<div class="collapsible" id="statusManager">
+  <div class="collapsible-header">Manage Status Effects</div>
+  <div class="collapsible-content">
+    <input type="text" id="newStatusInput" placeholder="New status effect">
+    <button type="button" id="addStatusBtn">Add Effect</button>
+
+    <h3>Existing Effects</h3>
+    <div id="statusList"></div>
+  </div>
+</div>
+
+<script>
+  /* ------------------------------
+     CENTRAL DATA
+  ------------------------------ */
+  let ROLE_OPTIONS = ["Werewolf", "Villager", "Seer", "Bodyguard", "Chupakabra", "Vacuum salesman"];
+  let STATUS_EFFECTS = ["Has Vacuum"];
+
+  const grid = document.getElementById("playerGrid");
+  const addBtn = document.getElementById("addPlayerBtn");
+  const clearBtn = document.getElementById("clearBtn");
+  const form = document.getElementById("charForm");
+
+  const roleListDiv = document.getElementById("roleList");
+  const newRoleInput = document.getElementById("newRoleInput");
+  const addRoleBtn = document.getElementById("addRoleBtn");
+
+  const statusListDiv = document.getElementById("statusList");
+  const newStatusInput = document.getElementById("newStatusInput");
+  const addStatusBtn = document.getElementById("addStatusBtn");
+
+  let playerCount = 0;
+
+  /* ------------------------------
+     COLLAPSIBLE LOGIC
+  ------------------------------ */
+  document.querySelectorAll(".collapsible-header").forEach(header => {
+    header.addEventListener("click", () => {
+      header.parentElement.classList.toggle("open");
+    });
+  });
+
+  /* ------------------------------
+     GRID HEADER REBUILD
+  ------------------------------ */
+  function rebuildHeaders() {
+    grid.innerHTML = "";
+
+    const headers = ["Name", "Role", "Dead", ...STATUS_EFFECTS, "Remove"];
+
+    grid.style.gridTemplateColumns =
+      `2fr 1.5fr 1fr ${"1fr ".repeat(STATUS_EFFECTS.length)} 0.7fr`;
+
+    headers.forEach(h => {
+      const div = document.createElement("div");
+      div.className = "grid-header";
+      div.textContent = h;
+      grid.appendChild(div);
+    });
+
+    for (let i = 1; i <= playerCount; i++) {
+      rebuildPlayerRow(i);
+    }
+  }
+
+  /* ------------------------------
+     PLAYER ROW REBUILD
+  ------------------------------ */
+  function rebuildPlayerRow(id) {
+    const existing = document.querySelectorAll(`.row-${id}`);
+    existing.forEach(e => e.remove());
+
+    const nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.name = `name${id}`;
+    nameInput.placeholder = "Enter name";
+    nameInput.className = "grid-item row-" + id;
+
+    const roleSelect = createRoleDropdown(`role${id}`);
+    roleSelect.className = "grid-item row-" + id;
+
+    const inGame = document.createElement("input");
+    inGame.type = "checkbox";
+    inGame.name = `inGame${id}`;
+
+    const rowElements = [
+      wrap(nameInput, false, id),
+      wrap(roleSelect, false, id),
+      wrap(inGame, true, id)
+    ];
+
+    STATUS_EFFECTS.forEach(effect => {
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.name = `status_${effect.replace(/\s+/g, "_").toLowerCase()}_${id}`;
+      rowElements.push(wrap(cb, true, id));
+    });
+
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.textContent = "X";
+    removeBtn.className = "remove-btn";
+    removeBtn.onclick = () => removePlayer(id);
+    rowElements.push(wrap(removeBtn, true, id));
+
+    rowElements.forEach(el => grid.appendChild(el));
+  }
+
+  function wrap(el, center = false, id) {
+    const div = document.createElement("div");
+    div.className = (center ? "grid-item checkbox-center" : "grid-item") + " row-" + id;
+    div.appendChild(el);
+    return div;
+  }
+
+  /* ------------------------------
+     ROLE DROPDOWN
+  ------------------------------ */
+  function createRoleDropdown(name) {
+    const select = document.createElement("select");
+    select.name = name;
+
+    const empty = document.createElement("option");
+    empty.value = "";
+    empty.textContent = "Select role";
+    select.appendChild(empty);
+
+    ROLE_OPTIONS.forEach(role => {
+      const opt = document.createElement("option");
+      opt.value = role.toLowerCase();
+      opt.textContent = role;
+      select.appendChild(opt);
+    });
+
+    return select;
+  }
+
+  /* ------------------------------
+     PLAYER MANAGEMENT
+  ------------------------------ */
+  function addPlayer() {
+    playerCount++;
+    rebuildHeaders();
+  }
+
+  function removePlayer(id) {
+    const elements = document.querySelectorAll(`.row-${id}`);
+    elements.forEach(e => e.remove());
+  }
+
+  /* ------------------------------
+     CLEAR BUTTON
+  ------------------------------ */
+  clearBtn.addEventListener("click", () => {
+    const names = [...form.querySelectorAll('input[type="text"]')].map(i => i.value);
+    form.reset();
+    form.querySelectorAll('input[type="text"]').forEach((input, index) => {
+      input.value = names[index] || "";
+    });
+  });
+
+  /* ------------------------------
+     ROLE MANAGER
+  ------------------------------ */
+  function renderRoleList() {
+    roleListDiv.innerHTML = "";
+
+    ROLE_OPTIONS.forEach((role, index) => {
+      const row = document.createElement("div");
+      row.textContent = role;
+
+      const removeBtn = document.createElement("button");
+      removeBtn.textContent = "Remove";
+      removeBtn.onclick = () => {
+        ROLE_OPTIONS.splice(index, 1);
+        renderRoleList();
+        rebuildHeaders();
+      };
+
+      row.appendChild(removeBtn);
+      roleListDiv.appendChild(row);
+    });
+  }
+
+  addRoleBtn.addEventListener("click", () => {
+    const newRole = newRoleInput.value.trim();
+    if (newRole && !ROLE_OPTIONS.includes(newRole)) {
+      ROLE_OPTIONS.push(newRole);
+      newRoleInput.value = "";
+      renderRoleList();
+      rebuildHeaders();
+    }
+  });
+
+  /* ------------------------------
+     STATUS EFFECT MANAGER
+  ------------------------------ */
+  function renderStatusList() {
+    statusListDiv.innerHTML = "";
+
+    STATUS_EFFECTS.forEach((effect, index) => {
+      const row = document.createElement("div");
+      row.textContent = effect;
+
+      const removeBtn = document.createElement("button");
+      removeBtn.textContent = "Remove";
+      removeBtn.onclick = () => {
+        STATUS_EFFECTS.splice(index, 1);
+        renderStatusList();
+        rebuildHeaders();
+      };
+
+      row.appendChild(removeBtn);
+      statusListDiv.appendChild(row);
+    });
+  }
+
+  addStatusBtn.addEventListener("click", () => {
+    const newEffect = newStatusInput.value.trim();
+    if (newEffect && !STATUS_EFFECTS.includes(newEffect)) {
+      STATUS_EFFECTS.push(newEffect);
+      newStatusInput.value = "";
+      renderStatusList();
+      rebuildHeaders();
+    }
+  });
+
+  /* ------------------------------
+     INIT
+  ------------------------------ */
+  addPlayer();
+  renderRoleList();
+  renderStatusList();
+  addBtn.addEventListener("click", addPlayer);
+</script>
+
+</body>
+</html>
