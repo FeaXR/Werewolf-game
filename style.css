@@ -90,7 +90,7 @@ button:hover {
 
 .collapsible-content {
   max-height: 0;
-  overflow: hidden;
+  /* overflow: hidden; */
   transition: max-height 0.25s ease-out;
   padding: 0 10px;
 }
@@ -98,4 +98,9 @@ button:hover {
 .collapsible.open .collapsible-content {
   padding: 10px;
   max-height: 500px;
+}
+
+.manager {
+  display: block;
+  overflow: auto;
 }
