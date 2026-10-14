@@ -4,7 +4,7 @@
 // cached copy is only used when the network fails. When adding a file the
 // page needs, add it to FILES and bump CACHE so offline use keeps working.
 
-const CACHE = "werewolf-v1";
+const CACHE = "werewolf-v2";
 const FILES = [
   "./",
   "index.html",
@@ -18,6 +18,7 @@ const FILES = [
   "js/toolbar.js",
   "js/wakelock.js",
   "js/install.js",
+  "js/timer.js",
   "js/managers.js",
   "js/main.js",
   "icons/icon-192.png",

@@ -635,3 +635,63 @@ h1::before {
 .install-hint span {
   flex: 1;
 }
+
+/* ------------------------------
+   TIMER
+------------------------------ */
+.timer-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  margin-bottom: 12px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.timer-panel[hidden] {
+  display: none;
+}
+
+.timer-display {
+  min-width: 4.5ch;
+  font-size: 2.5rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.timer-display.ending {
+  color: var(--danger);
+}
+
+.timer-controls,
+.timer-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.timer-panel.done {
+  border-color: var(--danger);
+  animation: timer-flash 0.5s ease-in-out 6 alternate;
+}
+
+.timer-panel.done .timer-display {
+  color: var(--danger);
+}
+
+@keyframes timer-flash {
+  to {
+    background: var(--danger-soft);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timer-panel.done {
+    animation: none;
+    background: var(--danger-soft);
+  }
+}

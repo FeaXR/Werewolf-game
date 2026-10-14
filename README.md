@@ -42,6 +42,11 @@ one HTML file, one stylesheet, and a few plain JavaScript files.
 - **Hide roles**: blurs every role (and the role tally) so players looking
   over your shoulder can't see them. Hover over a player, or focus their
   role dropdown, to see that player's role.
+- **Day timer**: **Timer** opens a countdown for discussion, with 1, 2, 3,
+  and 5 minute presets, +30s, pause, and reset. When time runs out it plays a
+  chime, vibrates (on phones that support it), and flashes. While it runs,
+  the time left is shown on the toolbar button. It stays accurate even if
+  you switch apps.
 - **Keep screen on**: stops your phone from dimming or locking mid-game. It
   uses the browser's Screen Wake Lock, and the button only appears in browsers
   that support it. The setting is remembered on that device.
@@ -169,6 +174,7 @@ js/
   toolbar.js     Next turn, New game, Copy share link, Hide roles
   wakelock.js    Keep screen on (Screen Wake Lock)
   install.js     Registers the service worker; shows the install hint
+  timer.js       Day timer: countdown, presets, chime and vibration
   managers.js    The Roles and Status effects panels
   main.js        Start-up
 LICENSE          MIT license
@@ -188,7 +194,7 @@ LICENSE          MIT license
   variables and run in the order `index.html` lists them, so a new script
   must go after any script it depends on. Keep `main.js` last.
 - **When you add a file**, also add it to `FILES` in `sw.js` and increase the
-  `CACHE` version (`werewolf-v1` → `werewolf-v2`). Otherwise the new file
+  `CACHE` version (for example `werewolf-v2` → `werewolf-v3`). Otherwise the new file
   won't be available offline. Edits to existing files don't need this, since
   the service worker always tries the network first.
 
