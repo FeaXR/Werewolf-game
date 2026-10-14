@@ -1,58 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <link rel="stylesheet" href="style.css" />
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark light" />
     <title>Werewolf</title>
+    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <h1>Werewolf</h1>
+    <header class="page-header">
+      <div>
+        <h1>Werewolf</h1>
+        <p class="subtitle">Moderator board</p>
+      </div>
+      <div class="summary" id="summary" aria-live="polite"></div>
+    </header>
 
-    <form id="charForm">
-      <div class="grid-container" id="playerGrid">
-        <!-- Headers and rows dynamically generated -->
+    <main>
+      <div class="toolbar">
+        <button type="button" class="btn primary" id="addPlayerBtn">
+          + Add player
+        </button>
+        <button
+          type="button"
+          class="btn"
+          id="hideRolesBtn"
+          aria-pressed="false"
+          title="Blur roles so nearby players can't peek"
+        >
+          Hide roles
+        </button>
+        <button
+          type="button"
+          class="btn"
+          id="resetBtn"
+          title="Clear roles, deaths and effects but keep player names"
+        >
+          New round
+        </button>
+        <button
+          type="button"
+          class="btn"
+          id="shareBtn"
+          title="Copy a link containing the whole game"
+        >
+          Copy share link
+        </button>
+        <span class="save-status" id="saveStatus">Saved</span>
       </div>
 
-      <div class="controls">
-        <button type="button" id="addPlayerBtn">Add Player</button>
-        <button type="button" id="clearBtn">Clear</button>
-        <button type="submit" id="saveBtn">Save</button>
-      </div>
-    </form>
+      <div class="tally" id="tally"></div>
 
-    <!-- ROLE MANAGER -->
-    <div class="collapsible manager" id="roleManager">
-      <div class="collapsible-header">Manage Roles</div>
-      <div class="collapsible-content">
-        <input type="text" id="newRoleInput" placeholder="New role name" />
-        <button type="button" id="addRoleBtn">Add Role</button>
+      <ol class="players" id="playerList"></ol>
+      <p class="empty" id="emptyState" hidden>
+        No players yet. Press <strong>+ Add player</strong> to start.
+      </p>
 
-        <h3>Existing Roles</h3>
-        <div id="roleList"></div>
-      </div>
-    </div>
+      <section class="settings">
+        <details class="panel" id="roleManager">
+          <summary>Roles <span class="count" id="roleCount"></span></summary>
+          <form class="add-form" id="roleForm">
+            <input
+              type="text"
+              id="newRoleInput"
+              placeholder="New role name"
+              aria-label="New role name"
+              autocomplete="off"
+            />
+            <button type="submit" class="btn">Add</button>
+          </form>
+          <ul class="chip-list" id="roleList"></ul>
+        </details>
 
-    <!-- STATUS EFFECT MANAGER -->
-    <div class="collapsible manager" id="statusManager">
-      <div class="collapsible-header">Manage Status Effects</div>
-      <div class="collapsible-content">
-        <input
-          type="text"
-          id="newStatusInput"
-          placeholder="New status effect"
-        />
-        <button type="button" id="addStatusBtn">Add Effect</button>
+        <details class="panel" id="statusManager">
+          <summary>
+            Status effects <span class="count" id="statusCount"></span>
+          </summary>
+          <form class="add-form" id="statusForm">
+            <input
+              type="text"
+              id="newStatusInput"
+              placeholder="New status effect"
+              aria-label="New status effect"
+              autocomplete="off"
+            />
+            <button type="submit" class="btn">Add</button>
+          </form>
+          <ul class="chip-list" id="statusList"></ul>
+        </details>
+      </section>
+    </main>
 
-        <h3>Existing Effects</h3>
-        <div id="statusList"></div>
-      </div>
+    <div class="toast" id="toast" role="status" hidden>
+      <span id="toastText"></span>
+      <button type="button" class="btn small" id="toastUndo" hidden>
+        Undo
+      </button>
     </div>
 
     <script>
       /* ------------------------------
      CENTRAL DATA
   ------------------------------ */
-      let ROLE_OPTIONS = [
+      const STORAGE_KEY = "werewolf-game";
+      const PREFS_KEY = "werewolf-prefs";
+
+      const DEFAULT_ROLES = [
         "Werewolf",
         "Villager",
         "Seer",
@@ -60,345 +113,461 @@
         "Chupakabra",
         "Vacuum salesman",
       ];
-      let STATUS_EFFECTS = ["Has Vacuum"];
+      const DEFAULT_EFFECTS = ["Has Vacuum"];
 
-      const grid = document.getElementById("playerGrid");
-      const addBtn = document.getElementById("addPlayerBtn");
-      const clearBtn = document.getElementById("clearBtn");
-      const form = document.getElementById("charForm");
+      // One object holds the whole game; everything is rendered from it.
+      // player = { name, role, dead, effects: [effect names] }
+      let state = loadState();
 
-      const roleListDiv = document.getElementById("roleList");
-      const newRoleInput = document.getElementById("newRoleInput");
-      const addRoleBtn = document.getElementById("addRoleBtn");
-
-      const statusListDiv = document.getElementById("statusList");
-      const newStatusInput = document.getElementById("newStatusInput");
-      const addStatusBtn = document.getElementById("addStatusBtn");
-
-      let playerCount = 0;
+      const $ = (id) => document.getElementById(id);
+      const playerList = $("playerList");
 
       /* ------------------------------
-     COLLAPSIBLE LOGIC
+     HELPERS
   ------------------------------ */
-      document.querySelectorAll(".collapsible-header").forEach((header) => {
-        header.addEventListener("click", () => {
-          header.parentElement.classList.toggle("open");
+      function el(tag, props = {}, children = []) {
+        const node = document.createElement(tag);
+        Object.entries(props).forEach(([key, value]) => {
+          if (key === "dataset") Object.assign(node.dataset, value);
+          else if (key in node) node[key] = value;
+          else node.setAttribute(key, value);
         });
+        children.forEach((child) => child && node.append(child));
+        return node;
+      }
+
+      function newPlayer(name = "") {
+        return { name, role: "", dead: false, effects: [] };
+      }
+
+      function sameText(a, b) {
+        return a.trim().toLowerCase() === b.trim().toLowerCase();
+      }
+
+      /* ------------------------------
+     LOAD & SAVE
+  ------------------------------ */
+      function normalize(raw) {
+        const roles = Array.isArray(raw?.roles)
+          ? raw.roles.map(String)
+          : [...DEFAULT_ROLES];
+        const effects = Array.isArray(raw?.effects)
+          ? raw.effects.map(String)
+          : [...DEFAULT_EFFECTS];
+        const players = Array.isArray(raw?.players)
+          ? raw.players.map((p) => ({
+              name: String(p?.name ?? ""),
+              role: roles.includes(p?.role) ? p.role : "",
+              dead: !!p?.dead,
+              effects: Array.isArray(p?.effects)
+                ? p.effects.filter((e) => effects.includes(e))
+                : [],
+            }))
+          : [newPlayer()];
+        return { roles, effects, players };
+      }
+
+      // Links saved by the original version of the page used three params.
+      function fromLegacyParams(params) {
+        const slug = (s) => s.replace(/\s+/g, "_").toLowerCase();
+        const roles = JSON.parse(params.get("roleData") || "null") ?? [
+          ...DEFAULT_ROLES,
+        ];
+        const effects = JSON.parse(params.get("statusData") || "null") ?? [
+          ...DEFAULT_EFFECTS,
+        ];
+        const rows = JSON.parse(params.get("playerData") || "[]");
+        const players = rows.map((row, i) => ({
+          name: row.name || "",
+          role: roles.find((r) => r.toLowerCase() === row.role) || "",
+          dead: !!row.isDead,
+          effects: effects.filter(
+            (e) => row.effects?.[`status_${slug(e)}_${i + 1}`]
+          ),
+        }));
+        return { roles, effects, players };
+      }
+
+      function loadState() {
+        const params = new URLSearchParams(location.search);
+        try {
+          let fromUrl = null;
+          if (params.has("game")) fromUrl = JSON.parse(params.get("game"));
+          else if (params.has("playerData") || params.has("roleData"))
+            fromUrl = fromLegacyParams(params);
+
+          if (fromUrl) {
+            // Drop the params so a refresh doesn't overwrite later edits.
+            history.replaceState(null, "", location.pathname);
+            return normalize(fromUrl);
+          }
+        } catch (err) {
+          console.warn("Could not read game from link", err);
+        }
+
+        try {
+          const stored = localStorage.getItem(STORAGE_KEY);
+          if (stored) return normalize(JSON.parse(stored));
+        } catch (err) {
+          console.warn("Could not read saved game", err);
+        }
+
+        return normalize(null);
+      }
+
+      let saveTimer;
+      function save() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+          $("saveStatus").textContent = "Saved";
+        } catch {
+          $("saveStatus").textContent = "Not saved (storage unavailable)";
+        }
+        $("saveStatus").classList.add("flash");
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(
+          () => $("saveStatus").classList.remove("flash"),
+          600
+        );
+      }
+
+      function commit() {
+        save();
+        render();
+      }
+
+      /* ------------------------------
+     UNDO TOAST
+  ------------------------------ */
+      let undoSnapshot = null;
+      let toastTimer;
+
+      function toast(message, undoable = false) {
+        $("toastText").textContent = message;
+        $("toastUndo").hidden = !undoable;
+        $("toast").hidden = false;
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+          $("toast").hidden = true;
+          undoSnapshot = null;
+        }, 5000);
+      }
+
+      function snapshot() {
+        undoSnapshot = JSON.stringify(state);
+      }
+
+      $("toastUndo").addEventListener("click", () => {
+        if (!undoSnapshot) return;
+        state = JSON.parse(undoSnapshot);
+        undoSnapshot = null;
+        $("toast").hidden = true;
+        commit();
       });
 
       /* ------------------------------
-     DATA CAPTURE & RESTORE
+     RENDER
   ------------------------------ */
-      function capturePlayerData() {
-        const data = [];
+      function render() {
+        renderSummary();
+        renderPlayers();
+        renderList("role", state.roles, $("roleList"), $("roleCount"));
+        renderList("status", state.effects, $("statusList"), $("statusCount"));
+      }
 
-        for (let i = 1; i <= playerCount; i++) {
-          const row = {};
+      function renderSummary() {
+        const total = state.players.length;
+        const dead = state.players.filter((p) => p.dead).length;
+        $("summary").replaceChildren(
+          el("span", { className: "stat" }, [
+            el("strong", { textContent: total }),
+            ` player${total === 1 ? "" : "s"}`,
+          ]),
+          el("span", { className: "stat alive" }, [
+            el("strong", { textContent: total - dead }),
+            " alive",
+          ]),
+          el("span", { className: "stat dead" }, [
+            el("strong", { textContent: dead }),
+            " dead",
+          ])
+        );
 
-          row.name = form.querySelector(`input[name="name${i}"]`)?.value || "";
-          row.role = form.querySelector(`select[name="role${i}"]`)?.value || "";
-          row.isDead =
-            form.querySelector(`input[name="isDead${i}"]`)?.checked || false;
-
-          row.effects = {};
-          STATUS_EFFECTS.forEach((effect) => {
-            const key = `status_${effect
-              .replace(/\s+/g, "_")
-              .toLowerCase()}_${i}`;
-            row.effects[key] =
-              form.querySelector(`input[name="${key}"]`)?.checked || false;
+        // Roles still in play among living players.
+        const counts = new Map();
+        state.players
+          .filter((p) => !p.dead)
+          .forEach((p) => {
+            const role = p.role || "Unassigned";
+            counts.set(role, (counts.get(role) || 0) + 1);
           });
-
-          data.push(row);
-        }
-        return data;
+        $("tally").replaceChildren(
+          ...[...counts].map(([role, n]) =>
+            el("span", {
+              className:
+                "tally-item" + (role === "Unassigned" ? " muted" : ""),
+              textContent: `${role} × ${n}`,
+            })
+          )
+        );
       }
 
-      function restorePlayerData(data) {
-        data.forEach((row, index) => {
-          const id = index + 1;
+      function renderPlayers() {
+        $("emptyState").hidden = state.players.length > 0;
 
-          // addPlayer();
-          const nameInput = form.querySelector(`input[name="name${id}"]`);
-          const roleSelect = form.querySelector(`select[name="role${id}"]`);
-          const isDead = form.querySelector(`input[name="isDead${id}"]`);
+        playerList.replaceChildren(
+          ...state.players.map((player, index) => {
+            const roleSelect = el(
+              "select",
+              {
+                className: "role",
+                "aria-label": `Role for player ${index + 1}`,
+              },
+              [
+                el("option", { value: "", textContent: "Select role" }),
+                ...state.roles.map((role) =>
+                  el("option", { value: role, textContent: role })
+                ),
+              ]
+            );
+            roleSelect.value = player.role;
 
-          if (nameInput) nameInput.value = row.name;
-          if (roleSelect) roleSelect.value = row.role;
-          if (isDead) isDead.checked = row.isDead;
+            const effects = state.effects.map((effect) =>
+              el("button", {
+                type: "button",
+                className: "chip toggle",
+                textContent: effect,
+                "aria-pressed": player.effects.includes(effect),
+                dataset: { action: "effect", effect },
+              })
+            );
 
-          STATUS_EFFECTS.forEach((effect) => {
-            const key = `status_${effect
-              .replace(/\s+/g, "_")
-              .toLowerCase()}_${id}`;
-            const cb = form.querySelector(`input[name="${key}"]`);
-            if (cb) cb.checked = row.effects[key];
-          });
-        });
+            return el(
+              "li",
+              {
+                className: "player" + (player.dead ? " is-dead" : ""),
+                dataset: { index },
+              },
+              [
+                el("span", {
+                  className: "player-number",
+                  textContent: index + 1,
+                }),
+                el("input", {
+                  type: "text",
+                  className: "name",
+                  value: player.name,
+                  placeholder: "Player name",
+                  "aria-label": `Name of player ${index + 1}`,
+                  autocomplete: "off",
+                }),
+                roleSelect,
+                el("div", { className: "effects" }, effects),
+                el("button", {
+                  type: "button",
+                  className: "btn life",
+                  textContent: player.dead ? "Dead" : "Alive",
+                  "aria-pressed": player.dead,
+                  title: player.dead ? "Revive player" : "Mark as dead",
+                  dataset: { action: "dead" },
+                }),
+                el("button", {
+                  type: "button",
+                  className: "btn icon remove",
+                  textContent: "×",
+                  title: "Remove player",
+                  "aria-label": `Remove player ${index + 1}`,
+                  dataset: { action: "remove" },
+                }),
+              ]
+            );
+          })
+        );
       }
 
-      function restoreRoles(data) {
-        ROLE_OPTIONS = data;
-        renderRoleList();
-        rebuildHeaders();
-      }
-
-      function restoreStatuses(data) {
-        STATUS_EFFECTS = data;
-        renderStatusList();
-        rebuildHeaders();
-      }
-
-      function restoreFromURL() {
-        let params = new URLSearchParams(document.location.search);
-
-        var roleData = params.get("roleData");
-        if (roleData) restoreRoles(JSON.parse(roleData));
-
-        var statusData = params.get("statusData");
-        if (statusData) restoreStatuses(JSON.parse(statusData));
-
-        var playerData = params.get("playerData");
-
-        if (playerData) {
-          playerData = JSON.parse(playerData);
-
-          for (let i = 0; i < playerData.length - 1; i++) {
-            addPlayer();
-          }
-
-          restorePlayerData(playerData);
-        }
-      }
-
-      /* ------------------------------
-     GRID HEADER REBUILD
-  ------------------------------ */
-      function rebuildHeaders() {
-        const saved = capturePlayerData();
-
-        grid.innerHTML = "";
-
-        const headers = ["Name", "Role", "Dead", ...STATUS_EFFECTS, "Remove"];
-
-        grid.style.gridTemplateColumns = `2fr 1.5fr 1fr ${"1fr ".repeat(
-          STATUS_EFFECTS.length
-        )} 0.7fr`;
-
-        headers.forEach((h) => {
-          const div = document.createElement("div");
-          div.className = "grid-header";
-          div.textContent = h;
-          grid.appendChild(div);
-        });
-
-        for (let i = 1; i <= playerCount; i++) {
-          rebuildPlayerRow(i);
-        }
-
-        restorePlayerData(saved);
-      }
-
-      /* ------------------------------
-     PLAYER ROW REBUILD
-  ------------------------------ */
-      function rebuildPlayerRow(id) {
-        const existing = document.querySelectorAll(`.row-${id}`);
-        existing.forEach((e) => e.remove());
-
-        const nameInput = document.createElement("input");
-        nameInput.type = "text";
-        nameInput.name = `name${id}`;
-        nameInput.placeholder = "Enter name";
-        nameInput.className = "grid-item row-" + id;
-
-        const roleSelect = createRoleDropdown(`role${id}`);
-        roleSelect.className = "grid-item row-" + id;
-
-        const isDead = document.createElement("input");
-        isDead.type = "checkbox";
-        isDead.name = `isDead${id}`;
-
-        const rowElements = [
-          wrap(nameInput, false, id),
-          wrap(roleSelect, false, id),
-          wrap(isDead, true, id),
-        ];
-
-        STATUS_EFFECTS.forEach((effect) => {
-          const cb = document.createElement("input");
-          cb.type = "checkbox";
-          cb.name = `status_${effect.replace(/\s+/g, "_").toLowerCase()}_${id}`;
-          rowElements.push(wrap(cb, true, id));
-        });
-
-        const removeBtn = document.createElement("button");
-        removeBtn.type = "button";
-        removeBtn.textContent = "X";
-        removeBtn.className = "remove-btn";
-        removeBtn.onclick = () => removePlayer(id);
-        rowElements.push(wrap(removeBtn, true, id));
-
-        rowElements.forEach((el) => grid.appendChild(el));
-      }
-
-      function wrap(el, center = false, id) {
-        const div = document.createElement("div");
-        div.className =
-          (center ? "grid-item checkbox-center" : "grid-item") + " row-" + id;
-        div.appendChild(el);
-        return div;
-      }
-
-      /* ------------------------------
-     ROLE DROPDOWN
-  ------------------------------ */
-      function createRoleDropdown(name) {
-        const select = document.createElement("select");
-        select.name = name;
-
-        const empty = document.createElement("option");
-        empty.value = "";
-        empty.textContent = "Select role";
-        select.appendChild(empty);
-
-        ROLE_OPTIONS.forEach((role) => {
-          const opt = document.createElement("option");
-          opt.value = role.toLowerCase();
-          opt.textContent = role;
-          select.appendChild(opt);
-        });
-
-        return select;
+      function renderList(kind, items, listEl, countEl) {
+        countEl.textContent = items.length;
+        listEl.replaceChildren(
+          ...items.map((item, index) =>
+            el("li", { className: "chip" }, [
+              item,
+              el("button", {
+                type: "button",
+                className: "chip-remove",
+                textContent: "×",
+                title: `Remove ${item}`,
+                "aria-label": `Remove ${item}`,
+                dataset: { kind, index },
+              }),
+            ])
+          )
+        );
       }
 
       /* ------------------------------
      PLAYER MANAGEMENT
   ------------------------------ */
-      function addPlayer() {
-        const saved = capturePlayerData();
-        playerCount++;
-        rebuildHeaders();
-        restorePlayerData(saved);
+      function addPlayer({ focus = true } = {}) {
+        state.players.push(newPlayer());
+        commit();
+        if (focus) focusName(state.players.length - 1);
       }
 
-      function removePlayer(id) {
-        const elements = document.querySelectorAll(`.row-${id}`);
-        elements.forEach((e) => e.remove());
+      function focusName(index) {
+        playerList
+          .querySelector(`li[data-index="${index}"] .name`)
+          ?.focus();
       }
 
-      /* ------------------------------
-     CLEAR BUTTON
-  ------------------------------ */
-      clearBtn.addEventListener("click", () => {
-        const names = [...form.querySelectorAll('input[type="text"]')].map(
-          (i) => i.value
-        );
-        form.reset();
-        form.querySelectorAll('input[type="text"]').forEach((input, index) => {
-          input.value = names[index] || "";
-        });
+      function playerIndex(target) {
+        return Number(target.closest("li.player")?.dataset.index);
+      }
+
+      // Typing updates the data without re-rendering so focus is kept.
+      playerList.addEventListener("input", (e) => {
+        if (!e.target.matches(".name")) return;
+        state.players[playerIndex(e.target)].name = e.target.value;
+        save();
       });
 
-      /* ------------------------------
-     PREVENT ENTER / SUBMIT RELOAD
-  ------------------------------ */
-      form.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-        }
+      playerList.addEventListener("change", (e) => {
+        if (!e.target.matches(".role")) return;
+        state.players[playerIndex(e.target)].role = e.target.value;
+        save();
+        renderSummary();
       });
 
-      form.addEventListener("submit", (e) => {
+      // Enter in a name field jumps to the next player (or adds one).
+      playerList.addEventListener("keydown", (e) => {
+        if (e.key !== "Enter" || !e.target.matches(".name")) return;
         e.preventDefault();
-        // Hook your own save logic here if needed
-        console.log("Save clicked - implement your save logic here.");
+        const index = playerIndex(e.target);
+        if (index === state.players.length - 1) addPlayer();
+        else focusName(index + 1);
+      });
 
-        window.location.href =
+      playerList.addEventListener("click", (e) => {
+        const button = e.target.closest("button[data-action]");
+        if (!button) return;
+        const index = playerIndex(button);
+        const player = state.players[index];
+
+        switch (button.dataset.action) {
+          case "dead":
+            player.dead = !player.dead;
+            break;
+          case "effect": {
+            const effect = button.dataset.effect;
+            player.effects = player.effects.includes(effect)
+              ? player.effects.filter((x) => x !== effect)
+              : [...player.effects, effect];
+            break;
+          }
+          case "remove":
+            snapshot();
+            state.players.splice(index, 1);
+            toast(`Removed ${player.name || `player ${index + 1}`}`, true);
+            break;
+        }
+        commit();
+      });
+
+      $("addPlayerBtn").addEventListener("click", () => addPlayer());
+
+      /* ------------------------------
+     TOOLBAR
+  ------------------------------ */
+      $("resetBtn").addEventListener("click", () => {
+        snapshot();
+        state.players = state.players.map((p) => newPlayer(p.name));
+        commit();
+        toast("New round: roles, deaths and effects cleared", true);
+      });
+
+      $("shareBtn").addEventListener("click", async () => {
+        const url =
           location.origin +
           location.pathname +
-          "?playerData=" +
-          JSON.stringify(capturePlayerData()) +
-          "&roleData=" +
-          JSON.stringify(ROLE_OPTIONS) +
-          "&statusData=" +
-          JSON.stringify(STATUS_EFFECTS);
-      });
-
-      /* ------------------------------
-     ROLE MANAGER
-  ------------------------------ */
-      function renderRoleList() {
-        roleListDiv.innerHTML = "";
-
-        ROLE_OPTIONS.forEach((role, index) => {
-          const row = document.createElement("div");
-          row.textContent = role;
-
-          const removeBtn = document.createElement("button");
-          removeBtn.textContent = "Remove";
-          removeBtn.onclick = () => {
-            ROLE_OPTIONS.splice(index, 1);
-            renderRoleList();
-            rebuildHeaders();
-          };
-
-          row.appendChild(removeBtn);
-          roleListDiv.appendChild(row);
-        });
-      }
-
-      addRoleBtn.addEventListener("click", () => {
-        const newRole = newRoleInput.value.trim();
-        if (newRole && !ROLE_OPTIONS.includes(newRole)) {
-          ROLE_OPTIONS.push(newRole);
-          newRoleInput.value = "";
-          renderRoleList();
-          rebuildHeaders();
+          "?game=" +
+          encodeURIComponent(JSON.stringify(state));
+        try {
+          await navigator.clipboard.writeText(url);
+          toast("Share link copied to clipboard");
+        } catch {
+          window.prompt("Copy this link:", url);
         }
       });
 
+      function setRolesHidden(hidden) {
+        document.body.classList.toggle("roles-hidden", hidden);
+        $("hideRolesBtn").setAttribute("aria-pressed", hidden);
+        $("hideRolesBtn").textContent = hidden ? "Show roles" : "Hide roles";
+        try {
+          localStorage.setItem(PREFS_KEY, JSON.stringify({ hidden }));
+        } catch {}
+      }
+
+      $("hideRolesBtn").addEventListener("click", () =>
+        setRolesHidden(!document.body.classList.contains("roles-hidden"))
+      );
+
       /* ------------------------------
-     STATUS EFFECT MANAGER
+     ROLE & STATUS EFFECT MANAGERS
   ------------------------------ */
-      function renderStatusList() {
-        statusListDiv.innerHTML = "";
+      function setupManager(kind, form, input, listEl) {
+        const items = () => (kind === "role" ? state.roles : state.effects);
 
-        STATUS_EFFECTS.forEach((effect, index) => {
-          const row = document.createElement("div");
-          row.textContent = effect;
+        form.addEventListener("submit", (e) => {
+          e.preventDefault();
+          const value = input.value.trim();
+          if (!value) return;
+          if (items().some((x) => sameText(x, value))) {
+            toast(`"${value}" already exists`);
+            input.select();
+            return;
+          }
+          items().push(value);
+          input.value = "";
+          commit();
+        });
 
-          const removeBtn = document.createElement("button");
-          removeBtn.textContent = "Remove";
-          removeBtn.onclick = () => {
-            STATUS_EFFECTS.splice(index, 1);
-            renderStatusList();
-            rebuildHeaders();
-          };
+        listEl.addEventListener("click", (e) => {
+          const button = e.target.closest(".chip-remove");
+          if (!button) return;
+          const index = Number(button.dataset.index);
+          const removed = items()[index];
 
-          row.appendChild(removeBtn);
-          statusListDiv.appendChild(row);
+          snapshot();
+          items().splice(index, 1);
+          // Clear the removed role/effect from any player using it.
+          state.players.forEach((p) => {
+            if (kind === "role" && p.role === removed) p.role = "";
+            if (kind === "status")
+              p.effects = p.effects.filter((x) => x !== removed);
+          });
+          commit();
+          toast(`Removed "${removed}"`, true);
         });
       }
 
-      addStatusBtn.addEventListener("click", () => {
-        const newEffect = newStatusInput.value.trim();
-        if (newEffect && !STATUS_EFFECTS.includes(newEffect)) {
-          STATUS_EFFECTS.push(newEffect);
-          newStatusInput.value = "";
-          renderStatusList();
-          rebuildHeaders();
-        }
-      });
+      setupManager("role", $("roleForm"), $("newRoleInput"), $("roleList"));
+      setupManager(
+        "status",
+        $("statusForm"),
+        $("newStatusInput"),
+        $("statusList")
+      );
 
       /* ------------------------------
      INIT
   ------------------------------ */
-      addPlayer();
-      renderRoleList();
-      renderStatusList();
-      addBtn.addEventListener("click", addPlayer);
-      restoreFromURL();
+      try {
+        setRolesHidden(!!JSON.parse(localStorage.getItem(PREFS_KEY))?.hidden);
+      } catch {
+        setRolesHidden(false);
+      }
+      save();
+      render();
     </script>
   </body>
 </html>
