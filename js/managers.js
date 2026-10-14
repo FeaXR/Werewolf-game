@@ -45,6 +45,10 @@ function setupManager(kind, form, input, listEl, durationSelect) {
       if (kind === "status")
         p.effects = p.effects.filter((x) => x !== removed);
     });
+    if (kind === "role") {
+      delete state.deal.counts[removed];
+      if (state.deal.fill === removed) state.deal.fill = "";
+    }
     commit();
     toast(`Removed "${removed}"`, true);
   });

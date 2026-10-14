@@ -1,7 +1,7 @@
 // Game data: defaults, loading from a share link or localStorage, and saving.
 //
 // One object holds the whole game; everything is rendered from it.
-// state = { turn, roles, effects, players }
+// state = { turn, roles, effects, players, deal }
 // player = { name, role, dead, effects: [effect names], notes }
 
 const STORAGE_KEY = "werewolf-game";
@@ -50,7 +50,21 @@ function normalize(raw) {
       }))
     : [newPlayer()];
   const turn = Math.max(1, parseInt(raw?.turn, 10) || 1);
-  return { turn, roles, effects, players };
+  return { turn, roles, effects, players, deal: normalizeDeal(raw?.deal, roles) };
+}
+
+// How many of each role Deal roles hands out; everyone else gets `fill`.
+function normalizeDeal(raw, roles) {
+  const counts = {};
+  Object.entries(raw?.counts ?? { Werewolf: 1 }).forEach(([role, n]) => {
+    n = Math.min(99, Math.max(0, parseInt(n, 10) || 0));
+    if (roles.includes(role) && n) counts[role] = n;
+  });
+  // "" means "leave everyone else without a role".
+  let fill = raw?.fill;
+  if (fill !== "" && !roles.includes(fill))
+    fill = roles.includes("Villager") ? "Villager" : "";
+  return { counts, fill };
 }
 
 function loadState() {
