@@ -1,106 +1,473 @@
+/* ------------------------------
+   THEME
+------------------------------ */
+:root {
+  --bg: #11131c;
+  --bg-glow: #1d2236;
+  --surface: #1a1d2b;
+  --surface-2: #232738;
+  --border: #31364b;
+  --text: #e8e9f0;
+  --text-muted: #9095ab;
+  --accent: #e0b04a; /* moonlight gold */
+  --accent-text: #1a1406;
+  --alive: #5fc48b;
+  --danger: #e2615a;
+  --danger-soft: rgba(226, 97, 90, 0.14);
+  --chip-on: rgba(224, 176, 74, 0.18);
+  --focus: #8fb1ff;
+  --radius: 10px;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f3f1ec;
+    --bg-glow: #e8e4da;
+    --surface: #ffffff;
+    --surface-2: #f6f4ef;
+    --border: #dcd8cd;
+    --text: #1f2130;
+    --text-muted: #6b6e80;
+    --accent: #b5801a;
+    --accent-text: #ffffff;
+    --alive: #2f8f5b;
+    --danger: #c23f37;
+    --danger-soft: rgba(194, 63, 55, 0.1);
+    --chip-on: rgba(181, 128, 26, 0.16);
+    --focus: #3563d6;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  }
+}
+
+/* ------------------------------
+   BASE
+------------------------------ */
+* {
+  box-sizing: border-box;
+}
+
 body {
-  font-family: Arial, sans-serif;
-  padding: 20px;
-  background-color: #f5f5f5;
+  margin: 0;
+  min-height: 100vh;
+  padding: 24px 16px 96px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--text);
+  background: radial-gradient(
+      ellipse at top,
+      var(--bg-glow),
+      transparent 60%
+    ),
+    var(--bg);
+  background-attachment: fixed;
 }
 
-h1 {
-  margin-bottom: 16px;
+main,
+.page-header {
+  max-width: 1100px;
+  margin: 0 auto;
 }
 
-.grid-container {
-  display: grid;
-  grid-template-columns: 2fr 1.5fr 1fr;
-  gap: 8px;
-  align-items: center;
-  max-width: 1400px;
-}
-
-.grid-header {
-  font-weight: bold;
-  background-color: #ddd;
-  padding: 6px 8px;
-  border-radius: 4px;
-  text-align: center;
-}
-
-.grid-item {
-  background-color: #fff;
-  padding: 6px 8px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 input[type="text"],
 select {
   width: 100%;
-  box-sizing: border-box;
-  padding: 4px 6px;
+  min-width: 0;
+  padding: 8px 10px;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
 }
 
-.checkbox-center {
+input[type="text"]::placeholder {
+  color: var(--text-muted);
+}
+
+/* ------------------------------
+   HEADER
+------------------------------ */
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 2rem;
+  letter-spacing: 0.02em;
+}
+
+h1::before {
+  content: "☾ ";
+  color: var(--accent);
+}
+
+.subtitle {
+  margin: 2px 0 0;
+  color: var(--text-muted);
+}
+
+.summary {
+  display: flex;
+  gap: 16px;
+  color: var(--text-muted);
+}
+
+.summary strong {
+  color: var(--text);
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.summary .alive strong {
+  color: var(--alive);
+}
+
+.summary .dead strong {
+  color: var(--danger);
+}
+
+/* ------------------------------
+   BUTTONS
+------------------------------ */
+.btn {
+  padding: 8px 14px;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.btn:hover {
+  border-color: var(--text-muted);
+}
+
+.btn.primary {
+  color: var(--accent-text);
+  background: var(--accent);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.btn.primary:hover {
+  filter: brightness(1.08);
+}
+
+.btn[aria-pressed="true"] {
+  background: var(--chip-on);
+  border-color: var(--accent);
+}
+
+.btn.small {
+  padding: 4px 10px;
+}
+
+.btn.icon {
+  width: 36px;
+  padding: 6px 0;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+/* ------------------------------
+   TOOLBAR & TALLY
+------------------------------ */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.save-status {
+  margin-left: auto;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  transition: color 0.3s;
+}
+
+.save-status.flash {
+  color: var(--alive);
+}
+
+.tally {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 28px;
+  margin-bottom: 12px;
+}
+
+.tally-item {
+  padding: 3px 10px;
+  font-size: 0.85rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.tally-item.muted {
+  color: var(--text-muted);
+}
+
+/* ------------------------------
+   PLAYER LIST
+------------------------------ */
+.players {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.player {
+  display: grid;
+  grid-template-columns: 28px minmax(140px, 2fr) minmax(130px, 1.5fr) 3fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--alive);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  transition: opacity 0.2s, border-color 0.2s;
+}
+
+.player-number {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.player.is-dead {
+  border-left-color: var(--danger);
+  background: linear-gradient(90deg, var(--danger-soft), transparent 40%),
+    var(--surface);
+}
+
+.player.is-dead .name,
+.player.is-dead .role,
+.player.is-dead .effects {
+  opacity: 0.55;
+}
+
+.player.is-dead .name {
+  text-decoration: line-through;
+}
+
+.btn.life {
+  min-width: 72px;
+  color: var(--alive);
+}
+
+.btn.life[aria-pressed="true"] {
+  color: var(--danger);
+  background: var(--danger-soft);
+  border-color: var(--danger);
+}
+
+.btn.remove:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.effects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.empty {
+  padding: 32px;
   text-align: center;
+  color: var(--text-muted);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
 }
 
-.checkbox-center input {
-  transform: scale(1.2);
+/* Hide roles: blur until the moderator hovers or focuses a row. */
+.roles-hidden .role,
+.roles-hidden .tally {
+  filter: blur(6px);
+  transition: filter 0.15s;
 }
 
-.controls {
-  margin-top: 16px;
+.roles-hidden .player:hover .role,
+.roles-hidden .role:focus,
+.roles-hidden .tally:hover {
+  filter: none;
 }
 
-button {
-  padding: 6px 10px;
-  border-radius: 4px;
-  border: 1px solid #888;
-  background-color: #eee;
+/* ------------------------------
+   CHIPS
+------------------------------ */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.chip.toggle {
+  cursor: pointer;
+  color: var(--text-muted);
+}
+
+.chip.toggle:hover {
+  border-color: var(--text-muted);
+}
+
+.chip.toggle[aria-pressed="true"] {
+  color: var(--text);
+  background: var(--chip-on);
+  border-color: var(--accent);
+}
+
+.chip.toggle[aria-pressed="true"]::before {
+  content: "✓";
+  color: var(--accent);
+}
+
+.chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip-remove {
+  padding: 0 2px;
+  font-size: 1.05rem;
+  line-height: 1;
+  color: var(--text-muted);
+  background: none;
+  border: none;
   cursor: pointer;
 }
 
-button:hover {
-  background-color: #ddd;
+.chip-remove:hover {
+  color: var(--danger);
 }
 
-.remove-btn {
-  background-color: #ffdddd;
-  border-color: #cc8888;
+/* ------------------------------
+   SETTINGS PANELS
+------------------------------ */
+.settings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 12px;
+  margin-top: 28px;
 }
 
-.remove-btn:hover {
-  background-color: #ffcccc;
+.panel {
+  padding: 0 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
 }
 
-/* Collapsible sections */
-.collapsible {
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  background: #fff;
-  margin-top: 20px;
-  overflow: hidden;
+.panel[open] {
+  padding-bottom: 14px;
 }
 
-.collapsible-header {
-  padding: 10px;
-  background: #e6e6e6;
+.panel summary {
+  padding: 12px 0;
+  font-weight: 600;
   cursor: pointer;
-  font-weight: bold;
   user-select: none;
 }
 
-.collapsible-content {
-  max-height: 0;
-  /* overflow: hidden; */
-  transition: max-height 0.25s ease-out;
-  padding: 0 10px;
+.panel .count {
+  margin-left: 4px;
+  padding: 1px 8px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  border-radius: 999px;
 }
 
-.collapsible.open .collapsible-content {
-  padding: 10px;
-  max-height: 500px;
+.add-form {
+  display: flex;
+  gap: 8px;
 }
 
-.manager {
-  display: block;
-  overflow: auto;
+/* ------------------------------
+   TOAST
+------------------------------ */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100% - 32px);
+  padding: 10px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+}
+
+.toast[hidden] {
+  display: none;
+}
+
+/* ------------------------------
+   SMALL SCREENS: players become cards
+------------------------------ */
+@media (max-width: 760px) {
+  .player {
+    grid-template-columns: 24px 1fr auto auto;
+    grid-template-areas:
+      "num name life remove"
+      ".   role role role"
+      ".   fx   fx   fx";
+  }
+
+  .player-number { grid-area: num; }
+  .player .name { grid-area: name; }
+  .player .role { grid-area: role; }
+  .player .effects { grid-area: fx; }
+  .player .life { grid-area: life; }
+  .player .remove { grid-area: remove; }
+
+  .effects:empty {
+    display: none;
+  }
+
+  .save-status {
+    width: 100%;
+    margin-left: 0;
+  }
 }
