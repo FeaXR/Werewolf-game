@@ -829,3 +829,44 @@ h1::before {
   padding: 14px;
   font-size: 1.1rem;
 }
+
+/* ------------------------------
+   SAVED SETUPS
+------------------------------ */
+.setup-list {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.setup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.setup-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.setup-info strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.setup-meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.setup-io {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}

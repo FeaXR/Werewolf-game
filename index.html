@@ -24,6 +24,7 @@
     <script defer src="js/timer.js"></script>
     <script defer src="js/deal.js"></script>
     <script defer src="js/managers.js"></script>
+    <script defer src="js/setups.js"></script>
     <script defer src="js/main.js"></script>
   </head>
   <body>
@@ -181,6 +182,43 @@
             it.
           </p>
           <ul class="chip-list" id="statusList"></ul>
+        </details>
+
+        <details class="panel" id="setupManager">
+          <summary>
+            Saved setups <span class="count" id="setupCount"></span>
+          </summary>
+          <p class="hint">
+            Save the current roles, status effects and deal counts to reuse
+            later. Setups are stored on this device; export them to use on
+            another one.
+          </p>
+          <form class="add-form" id="setupForm">
+            <input
+              type="text"
+              id="setupName"
+              placeholder="Name this setup"
+              aria-label="Setup name"
+              autocomplete="off"
+              maxlength="60"
+            />
+            <button type="submit" class="btn">Save current</button>
+          </form>
+          <ul class="setup-list" id="setupList"></ul>
+          <div class="setup-io">
+            <button type="button" class="btn small" id="exportSetups">
+              Export…
+            </button>
+            <button type="button" class="btn small" id="importSetups">
+              Import…
+            </button>
+            <input
+              type="file"
+              id="importFile"
+              accept=".json,application/json"
+              hidden
+            />
+          </div>
         </details>
       </section>
     </main>

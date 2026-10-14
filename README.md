@@ -40,6 +40,11 @@ one HTML file, one stylesheet, and a few plain JavaScript files.
   between one turn and the whole game, click its duration tag (`1 turn` /
   `game`). If you remove a role or effect, it is also cleared from every
   player who had it.
+- **Saved setups**: save the current roles, status effects, and deal counts
+  under a name (such as *Chaos night* or *Small group*) and load them later.
+  A built-in *Default* setup brings back the original lists. Use **Export…**
+  and **Import…** to move setups to another device or share them with other
+  moderators as a `.json` file.
 - **Autosave**: every change is saved in your browser, so refreshing or
   closing the tab doesn't lose the game.
 - **Share links**: *Copy share link* copies a URL that contains the whole
@@ -124,8 +129,8 @@ other static host (Netlify, a plain web server, and so on) works too.
 
 1. Add a player for each person at the table and type in their names. Drag
    them into seating order if that helps you.
-2. Open **Roles** and **Status effects** to set the lists for this game.
-   Defaults are provided.
+2. Open **Roles** and **Status effects** to set the lists for this game, or
+   load one from **Saved setups**. Defaults are provided.
 3. Press **Deal roles** to hand out roles randomly and pass the phone
    around, or pick each player's role yourself. Turn on **Hide roles** if
    people can see your screen.
@@ -145,15 +150,18 @@ other static host (Netlify, a plain web server, and so on) works too.
 
 You can change both lists in the page itself. To change the defaults for
 every new game, edit `DEFAULT_ROLES` and `DEFAULT_EFFECTS` at the top of
-`js/state.js`. The defaults only apply when there is no saved game.
-**New game** keeps your current lists, so to see changed defaults, clear the
-site's data or open the page in a private window.
+`js/state.js`. The defaults only apply when there is no saved game, and
+**New game** keeps your current lists. To switch to the defaults, load the
+built-in **Default** setup under **Saved setups**.
 
 ## How data is stored
 
 - The current game is saved in your browser's `localStorage` under the key
-  `werewolf-game`. The *Hide roles* setting is saved under `werewolf-prefs`.
-  Nothing is sent anywhere.
+  `werewolf-game`. Per-device settings (*Hide roles*, *Keep screen on*, the
+  timer preset) are saved under `werewolf-prefs`, and saved setups under
+  `werewolf-setups`. Nothing is sent anywhere.
+- Saved setups aren't part of the game, so they aren't included in share
+  links. Use **Export…** / **Import…** to move them.
 - A share link holds the game as JSON in a `?game=` parameter. When you open
   it, the game loads, is saved locally, and the parameter is removed from the
   address bar, so refreshing the page won't undo later changes.
@@ -183,6 +191,7 @@ js/
   timer.js       Day timer: countdown, presets, chime and vibration
   deal.js        Deal roles (shuffle) and pass-the-phone reveal
   managers.js    The Roles and Status effects panels
+  setups.js      Saved setups: save, load, delete, export, import
   main.js        Start-up
 LICENSE          MIT license
 ```

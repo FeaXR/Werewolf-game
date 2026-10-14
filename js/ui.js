@@ -19,16 +19,21 @@ function sameText(a, b) {
 }
 
 let undoSnapshot = null;
+let undoAction = null;
 let toastTimer;
 
-function toast(message, undoable = false) {
+// `undo` is true to offer restoring the last snapshot() of the game, or a
+// function to run instead (for things outside the game, like setups).
+function toast(message, undo = false) {
+  undoAction = typeof undo === "function" ? undo : null;
   $("toastText").textContent = message;
-  $("toastUndo").hidden = !undoable;
+  $("toastUndo").hidden = !undo;
   $("toast").hidden = false;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => {
     $("toast").hidden = true;
     undoSnapshot = null;
+    undoAction = null;
   }, 5000);
 }
 
@@ -37,9 +42,15 @@ function snapshot() {
 }
 
 $("toastUndo").addEventListener("click", () => {
+  $("toast").hidden = true;
+  if (undoAction) {
+    const action = undoAction;
+    undoAction = null;
+    action();
+    return;
+  }
   if (!undoSnapshot) return;
   state = JSON.parse(undoSnapshot);
   undoSnapshot = null;
-  $("toast").hidden = true;
   commit();
 });
