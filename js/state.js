@@ -14,11 +14,11 @@ const DEFAULT_ROLES = [
   "Bodyguard",
   "Chupakabra",
   "Vacuum salesman",
+  "Spellcaster",
 ];
 // duration: "game" lasts until the game ends, "turn" is cleared by Next turn.
 const DEFAULT_EFFECTS = [
   { name: "Has Vacuum", duration: "game" },
-  { name: "Infected", duration: "game" },
   { name: "Protected", duration: "turn" },
   { name: "Muted", duration: "turn" },
 ];
