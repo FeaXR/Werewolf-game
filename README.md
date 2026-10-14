@@ -6,6 +6,8 @@ Mafia). The moderator keeps track of who is playing, what role each player
 has, who has died, and any status effects in play. You can do it all from a
 laptop or a phone.
 
+**▶ Play it now: <https://feaxr.github.io/Werewolf-game/>**
+
 There is no server, account, or build step. It is one HTML file and one
 stylesheet.
 
@@ -37,7 +39,13 @@ stylesheet.
 
 ## Getting started
 
-### Just open it
+### Use the hosted version
+
+The board is published with GitHub Pages at
+<https://feaxr.github.io/Werewolf-game/>. Open it on whichever device you're
+moderating from. Nothing needs to be installed.
+
+### Run it locally
 
 Download or clone the repository and open `index.html` in any modern browser:
 
@@ -57,12 +65,14 @@ python -m http.server 8123
 
 Then visit <http://localhost:8123>.
 
-### Host it
+### Hosting
 
-Because it's a static site, you can host it anywhere: GitHub Pages, Netlify,
-or any web server. To use GitHub Pages, go to **Settings → Pages**, choose
-the `main` branch, and the board will be published at
-`https://<user>.github.io/Werewolf-game/`.
+The [hosted version](https://feaxr.github.io/Werewolf-game/) is deployed by
+GitHub Pages from the `main` branch, so changes go live a minute or two
+after they're merged. If you fork the repository, enable **Settings → Pages**
+on the `main` branch to get your own copy at
+`https://<user>.github.io/Werewolf-game/`. Because it's a static site, any
+other static host (Netlify, a plain web server, and so on) works too.
 
 ## How to run a game
 
