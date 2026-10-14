@@ -3,24 +3,35 @@
 A single-page moderator board for running an in-person game of
 [Werewolf](https://en.wikipedia.org/wiki/Mafia_(party_game)) (also known as
 Mafia). The moderator keeps track of who is playing, what role each player
-has, who has died, and any status effects in play. You can do it all from a
-laptop or a phone.
+has, who has died, which status effects are active, and which turn it is.
+You can do it all from a laptop or a phone.
 
 **▶ Play it now: <https://feaxr.github.io/Werewolf-game/>**
 
-There is no server, account, or build step. It is one HTML file and one
-stylesheet.
+There is no server, account, build step, or dependency. It's a static page:
+one HTML file, one stylesheet, and a few plain JavaScript files.
 
 ## Features
 
 - **Player list**: add as many players as you need, each with a name, a
   role, an alive/dead toggle, and any number of status effects.
-- **Live summary**: the header counts players, living players, and dead
-  players. Below the toolbar, a tally shows how many of each role are still
-  alive (for example `Werewolf × 2`).
+- **Reorder players**: drag a player's number (⋮⋮ 1) to move them, using a
+  mouse or touch. You can also focus the number and press <kbd>↑</kbd> /
+  <kbd>↓</kbd>. This makes it easy to match the order people sit around the
+  table.
+- **Turns and effect durations**: each status effect lasts either **1 turn**
+  (the default for new effects) or the **whole game**. **Next turn** moves
+  the turn counter forward and removes every one-turn effect from every
+  player. Whole-game effects such as *Has Vacuum* stay. One-turn effects have
+  a dashed outline.
+- **Live summary**: the header shows the current turn and counts players,
+  living players, and dead players. Below the toolbar, a tally shows how many
+  of each role are still alive (for example `Werewolf × 2`).
 - **Custom roles and status effects**: add or remove them in the *Roles* and
-  *Status effects* panels at the bottom of the page. If you remove one, it is
-  also cleared from every player who had it.
+  *Status effects* panels at the bottom of the page. To switch an effect
+  between one turn and the whole game, click its duration tag (`1 turn` /
+  `game`). If you remove a role or effect, it is also cleared from every
+  player who had it.
 - **Autosave**: every change is saved in your browser, so refreshing or
   closing the tab doesn't lose the game.
 - **Share links**: *Copy share link* copies a URL that contains the whole
@@ -28,10 +39,11 @@ stylesheet.
 - **Hide roles**: blurs every role (and the role tally) so players looking
   over your shoulder can't see them. Hover over a player, or focus their
   role dropdown, to see that player's role.
-- **New round**: keeps everyone's name but clears roles, deaths, and
-  effects, so the same group can play again.
-- **Undo**: removing a player, role, or effect, or starting a new round,
-  shows a message with an *Undo* button for a few seconds.
+- **New game**: keeps everyone's name but clears roles, deaths, and effects
+  and resets the turn counter, so the same group can play again.
+- **Undo**: removing a player, role, or effect, advancing the turn, or
+  starting a new game shows a message with an *Undo* button for a few
+  seconds.
 - **Keyboard friendly**: press <kbd>Enter</kbd> in a name field to move to the
   next player. On the last player, it adds a new player.
 - **Responsive, light and dark**: on narrow screens each player becomes a
@@ -76,25 +88,31 @@ other static host (Netlify, a plain web server, and so on) works too.
 
 ## How to run a game
 
-1. Add a player for each person at the table and type in their names.
-2. Open **Roles** and set the role list for this game. Defaults are provided.
+1. Add a player for each person at the table and type in their names. Drag
+   them into seating order if that helps you.
+2. Open **Roles** and **Status effects** to set the lists for this game.
+   Defaults are provided.
 3. Give each player a role. Turn on **Hide roles** if people can see your
    screen.
-4. As the game goes on, tap **Alive** to mark a player as dead, and toggle
-   status effect chips (such as *Has Vacuum*) as they come up.
-5. Keep an eye on the role tally to see which teams are still in the game.
-6. When the game ends, press **New round** to deal again with the same
+4. During a turn, tap **Alive** to mark a player as dead, and toggle effect
+   chips (such as *Protected* or *Has Vacuum*) as they come up.
+5. At the end of each turn, press **Next turn**. One-turn effects are cleared
+   and whole-game effects stay.
+6. Keep an eye on the role tally to see which teams are still in the game.
+7. When the game ends, press **New game** to deal again with the same
    players.
 
 ### Default roles and effects
 
 | Roles | Status effects |
 | --- | --- |
-| Werewolf, Villager, Seer, Bodyguard, Chupakabra, Vacuum salesman | Has Vacuum |
+| Werewolf, Villager, Seer, Bodyguard, Chupakabra, Vacuum salesman, Spellcaster | Has Vacuum *(whole game)*, Protected *(1 turn)*, Muted *(1 turn)* |
 
 You can change both lists in the page itself. To change the defaults for
-every new game, edit `DEFAULT_ROLES` and `DEFAULT_EFFECTS` near the top of the
-script in `index.html`.
+every new game, edit `DEFAULT_ROLES` and `DEFAULT_EFFECTS` at the top of
+`js/state.js`. The defaults only apply when there is no saved game.
+**New game** keeps your current lists, so to see changed defaults, clear the
+site's data or open the page in a private window.
 
 ## How data is stored
 
@@ -104,8 +122,8 @@ script in `index.html`.
 - A share link holds the game as JSON in a `?game=` parameter. When you open
   it, the game loads, is saved locally, and the parameter is removed from the
   address bar, so refreshing the page won't undo later changes.
-- Links saved by the earlier version of the page (with `playerData`,
-  `roleData`, and `statusData` parameters) still load.
+- Links from the very first version of the page (with `playerData`,
+  `roleData`, and `statusData` parameters) are no longer supported.
 
 > **Note:** a share link contains every role. Only send it to people who are
 > allowed to know them.
@@ -113,20 +131,39 @@ script in `index.html`.
 ## Project structure
 
 ```
-index.html   Page markup and all game logic (plain JavaScript, no dependencies)
-style.css    Theme, layout, and responsive styles
-LICENSE      MIT license
+index.html       Page markup; loads the stylesheet and scripts
+style.css        Theme, layout, and responsive styles
+js/
+  state.js       Defaults, the game state, loading (share link / localStorage) and saving
+  ui.js          DOM helpers and the undo toast
+  render.js      Draws the summary, tally, player list, and manager lists from state
+  players.js     Adding, editing, and removing players; toggling their effects
+  reorder.js     Drag-and-drop and arrow-key reordering of players
+  toolbar.js     Next turn, New game, Copy share link, Hide roles
+  managers.js    The Roles and Status effects panels
+  main.js        Start-up
+LICENSE          MIT license
 ```
 
-The script keeps the whole game in one `state` object
-(`{ roles, effects, players }`) and redraws the page from it after each
-change. Name fields are the exception: they update `state` as you type and
-don't redraw, so the text cursor stays where it is.
+### How the code fits together
+
+- The whole game lives in one `state` object:
+  `{ turn, roles, effects, players }`. Each effect is `{ name, duration }`,
+  where `duration` is `"turn"` or `"game"`. Each player is
+  `{ name, role, dead, effects }`, where `effects` holds effect names.
+- After every change, `commit()` saves `state` and redraws the page from it.
+  Name fields are the exception: they update `state` as you type and don't
+  redraw, so the text cursor stays where it is.
+- The scripts are plain `<script defer>` files, not ES modules, because
+  browsers block modules on pages opened from `file://`. They share global
+  variables and run in the order `index.html` lists them, so a new script
+  must go after any script it depends on. Keep `main.js` last.
 
 ## Contributing
 
 Issues and pull requests are welcome. Please keep the project dependency-free
-so it can still run by opening `index.html` directly.
+and build-free, so it still runs on GitHub Pages and by opening `index.html`
+directly.
 
 ## License
 
