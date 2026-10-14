@@ -245,7 +245,7 @@ h1::before {
 
 .player {
   display: grid;
-  grid-template-columns: 40px minmax(140px, 2fr) minmax(130px, 1.5fr) 3fr auto auto;
+  grid-template-columns: 40px minmax(140px, 2fr) minmax(130px, 1.5fr) 3fr auto auto auto;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
@@ -337,6 +337,45 @@ h1::before {
   border-color: var(--danger);
 }
 
+/* Notes: a full-width box under the player's row. */
+.notes {
+  grid-column: 2 / -1;
+  width: 100%;
+  min-height: 2.6em;
+  padding: 8px 10px;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  resize: vertical;
+}
+
+.notes::placeholder {
+  color: var(--text-muted);
+}
+
+.notes-toggle {
+  position: relative;
+  font-size: 1rem;
+}
+
+.notes-toggle[aria-expanded="true"] {
+  border-color: var(--text-muted);
+}
+
+/* Dot when the player has notes. */
+.notes-toggle.has-notes::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 7px;
+  height: 7px;
+  background: var(--accent);
+  border-radius: 50%;
+}
+
 .effects {
   display: flex;
   flex-wrap: wrap;
@@ -353,13 +392,16 @@ h1::before {
 
 /* Hide roles: blur until the moderator hovers or focuses a row. */
 .roles-hidden .role,
+.roles-hidden .notes,
 .roles-hidden .tally {
   filter: blur(6px);
   transition: filter 0.15s;
 }
 
 .roles-hidden .player:hover .role,
+.roles-hidden .player:hover .notes,
 .roles-hidden .role:focus,
+.roles-hidden .notes:focus,
 .roles-hidden .tally:hover {
   filter: none;
 }
@@ -534,11 +576,11 @@ h1::before {
 ------------------------------ */
 @media (max-width: 760px) {
   .player {
-    grid-template-columns: 36px 1fr auto auto;
+    grid-template-columns: 36px 1fr auto auto auto;
     grid-template-areas:
-      "num name life remove"
-      ".   role role role"
-      ".   fx   fx   fx";
+      "num name notes life remove"
+      ".   role role  role role"
+      ".   fx   fx    fx   fx";
   }
 
   .player-number { grid-area: num; }
@@ -547,6 +589,7 @@ h1::before {
   .player .effects { grid-area: fx; }
   .player .life { grid-area: life; }
   .player .remove { grid-area: remove; }
+  .player .notes-toggle { grid-area: notes; }
 
   .effects:empty {
     display: none;
@@ -567,5 +610,88 @@ h1::before {
   .save-status {
     width: 100%;
     margin-left: 0;
+  }
+}
+
+/* ------------------------------
+   INSTALL HINT
+------------------------------ */
+.install-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  background: var(--chip-on);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+}
+
+.install-hint[hidden] {
+  display: none;
+}
+
+.install-hint span {
+  flex: 1;
+}
+
+/* ------------------------------
+   TIMER
+------------------------------ */
+.timer-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  margin-bottom: 12px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.timer-panel[hidden] {
+  display: none;
+}
+
+.timer-display {
+  min-width: 4.5ch;
+  font-size: 2.5rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.timer-display.ending {
+  color: var(--danger);
+}
+
+.timer-controls,
+.timer-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.timer-panel.done {
+  border-color: var(--danger);
+  animation: timer-flash 0.5s ease-in-out 6 alternate;
+}
+
+.timer-panel.done .timer-display {
+  color: var(--danger);
+}
+
+@keyframes timer-flash {
+  to {
+    background: var(--danger-soft);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timer-panel.done {
+    animation: none;
+    background: var(--danger-soft);
   }
 }

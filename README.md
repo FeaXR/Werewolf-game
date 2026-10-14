@@ -15,6 +15,9 @@ one HTML file, one stylesheet, and a few plain JavaScript files.
 
 - **Player list**: add as many players as you need, each with a name, a
   role, an alive/dead toggle, and any number of status effects.
+- **Player notes**: tap ✎ on a player to jot down claims, votes, or
+  suspicions. A dot on ✎ shows which players have notes. Notes are blurred by
+  *Hide roles* and cleared by *New game*.
 - **Reorder players**: drag a player's number (⋮⋮ 1) to move them, using a
   mouse or touch. You can also focus the number and press <kbd>↑</kbd> /
   <kbd>↓</kbd>. This makes it easy to match the order people sit around the
@@ -39,6 +42,14 @@ one HTML file, one stylesheet, and a few plain JavaScript files.
 - **Hide roles**: blurs every role (and the role tally) so players looking
   over your shoulder can't see them. Hover over a player, or focus their
   role dropdown, to see that player's role.
+- **Day timer**: **Timer** opens a countdown for discussion, with 1, 2, 3,
+  and 5 minute presets, +30s, pause, and reset. When time runs out it plays a
+  chime, vibrates (on phones that support it), and flashes. While it runs,
+  the time left is shown on the toolbar button. It stays accurate even if
+  you switch apps.
+- **Keep screen on**: stops your phone from dimming or locking mid-game. It
+  uses the browser's Screen Wake Lock, and the button only appears in browsers
+  that support it. The setting is remembered on that device.
 - **New game**: keeps everyone's name but clears roles, deaths, and effects
   and resets the turn counter, so the same group can play again.
 - **Undo**: removing a player, role, or effect, advancing the turn, or
@@ -46,6 +57,9 @@ one HTML file, one stylesheet, and a few plain JavaScript files.
   seconds.
 - **Keyboard friendly**: press <kbd>Enter</kbd> in a name field to move to the
   next player. On the last player, it adds a new player.
+- **Installable and offline**: add it to your home screen to use it like an
+  app. After the first visit it works without a connection (see
+  [Install it as an app](#install-it-as-an-app-optional)).
 - **Responsive, light and dark**: on narrow screens each player becomes a
   card. The page follows your system's light or dark setting.
 
@@ -56,6 +70,21 @@ one HTML file, one stylesheet, and a few plain JavaScript files.
 The board is published with GitHub Pages at
 <https://feaxr.github.io/Werewolf-game/>. Open it on whichever device you're
 moderating from. Nothing needs to be installed.
+
+### Install it as an app (optional)
+
+Installing puts an icon on your home screen. The board then opens
+full-screen and works without a connection.
+
+- **iPhone / iPad:** open the site in Safari (or Chrome, Edge, or Firefox on
+  iOS 16.4+), tap **Share**, then **Add to Home Screen**. iOS doesn't let
+  websites prompt for this, so the page shows these steps as a hint
+  instead.
+- **Android, and Chrome / Edge on desktop:** use the **Install** button in
+  the banner at the top of the page, or *Install app* in the browser menu.
+
+On iPhone, the installed app keeps its own saved data, separate from Safari.
+To move a game in progress between them, use **Copy share link**.
 
 ### Run it locally
 
@@ -125,7 +154,7 @@ site's data or open the page in a private window.
 - Links from the very first version of the page (with `playerData`,
   `roleData`, and `statusData` parameters) are no longer supported.
 
-> **Note:** a share link contains every role. Only send it to people who are
+> **Note:** a share link contains every role and note. Only send it to people who are
 > allowed to know them.
 
 ## Project structure
@@ -133,13 +162,19 @@ site's data or open the page in a private window.
 ```
 index.html       Page markup; loads the stylesheet and scripts
 style.css        Theme, layout, and responsive styles
+manifest.webmanifest   App name, icons, and colours used when installed
+sw.js            Service worker: offline support (network first, cache as fallback)
+icons/           App icons, Apple touch icon, and favicon
 js/
   state.js       Defaults, the game state, loading (share link / localStorage) and saving
   ui.js          DOM helpers and the undo toast
   render.js      Draws the summary, tally, player list, and manager lists from state
-  players.js     Adding, editing, and removing players; toggling their effects
+  players.js     Adding, editing, and removing players; effects and notes
   reorder.js     Drag-and-drop and arrow-key reordering of players
   toolbar.js     Next turn, New game, Copy share link, Hide roles
+  wakelock.js    Keep screen on (Screen Wake Lock)
+  install.js     Registers the service worker; shows the install hint
+  timer.js       Day timer: countdown, presets, chime and vibration
   managers.js    The Roles and Status effects panels
   main.js        Start-up
 LICENSE          MIT license
@@ -150,7 +185,7 @@ LICENSE          MIT license
 - The whole game lives in one `state` object:
   `{ turn, roles, effects, players }`. Each effect is `{ name, duration }`,
   where `duration` is `"turn"` or `"game"`. Each player is
-  `{ name, role, dead, effects }`, where `effects` holds effect names.
+  `{ name, role, dead, effects, notes }`, where `effects` holds effect names.
 - After every change, `commit()` saves `state` and redraws the page from it.
   Name fields are the exception: they update `state` as you type and don't
   redraw, so the text cursor stays where it is.
@@ -158,6 +193,10 @@ LICENSE          MIT license
   browsers block modules on pages opened from `file://`. They share global
   variables and run in the order `index.html` lists them, so a new script
   must go after any script it depends on. Keep `main.js` last.
+- **When you add a file**, also add it to `FILES` in `sw.js` and increase the
+  `CACHE` version (for example `werewolf-v2` → `werewolf-v3`). Otherwise the new file
+  won't be available offline. Edits to existing files don't need this, since
+  the service worker always tries the network first.
 
 ## Contributing
 

@@ -6,6 +6,11 @@
     <meta name="color-scheme" content="dark light" />
     <title>Werewolf</title>
     <link rel="stylesheet" href="style.css" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+    <meta name="theme-color" content="#11131c" />
+    <meta name="apple-mobile-web-app-title" content="Werewolf" />
     <!-- Plain (non-module) scripts so the page also works when opened from
          disk. They share globals and run in this order, so keep it. -->
     <script defer src="js/state.js"></script>
@@ -14,6 +19,9 @@
     <script defer src="js/players.js"></script>
     <script defer src="js/reorder.js"></script>
     <script defer src="js/toolbar.js"></script>
+    <script defer src="js/wakelock.js"></script>
+    <script defer src="js/install.js"></script>
+    <script defer src="js/timer.js"></script>
     <script defer src="js/managers.js"></script>
     <script defer src="js/main.js"></script>
   </head>
@@ -27,6 +35,22 @@
     </header>
 
     <main>
+      <div class="install-hint" id="installHint" hidden>
+        <span id="installHintText"></span>
+        <button type="button" class="btn small primary" id="installBtn" hidden>
+          Install
+        </button>
+        <button
+          type="button"
+          class="chip-remove"
+          id="installHintClose"
+          aria-label="Dismiss install hint"
+          title="Dismiss"
+        >
+          ×
+        </button>
+      </div>
+
       <div class="toolbar">
         <button
           type="button"
@@ -64,8 +88,38 @@
         >
           Copy share link
         </button>
+        <button
+          type="button"
+          class="btn"
+          id="awakeBtn"
+          aria-pressed="false"
+          title="Stop the screen from dimming or locking during the game"
+          hidden
+        >
+          Keep screen on
+        </button>
+        <button
+          type="button"
+          class="btn"
+          id="timerBtn"
+          aria-expanded="false"
+          aria-controls="timerPanel"
+          title="Countdown timer for discussion"
+        >
+          Timer
+        </button>
         <span class="save-status" id="saveStatus">Saved</span>
       </div>
+
+      <section class="timer-panel" id="timerPanel" aria-label="Timer" hidden>
+        <div class="timer-display" id="timerDisplay">2:00</div>
+        <div class="timer-controls">
+          <button type="button" class="btn primary" id="timerStart">Start</button>
+          <button type="button" class="btn" id="timerAdd">+30s</button>
+          <button type="button" class="btn" id="timerReset">Reset</button>
+        </div>
+        <div class="timer-presets" id="timerPresets"></div>
+      </section>
 
       <div class="tally" id="tally"></div>
 
