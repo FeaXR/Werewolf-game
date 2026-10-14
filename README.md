@@ -39,6 +39,9 @@ one HTML file, one stylesheet, and a few plain JavaScript files.
 - **Hide roles**: blurs every role (and the role tally) so players looking
   over your shoulder can't see them. Hover over a player, or focus their
   role dropdown, to see that player's role.
+- **Keep screen on**: stops your phone from dimming or locking mid-game. It
+  uses the browser's Screen Wake Lock, and the button only appears in browsers
+  that support it. The setting is remembered on that device.
 - **New game**: keeps everyone's name but clears roles, deaths, and effects
   and resets the turn counter, so the same group can play again.
 - **Undo**: removing a player, role, or effect, advancing the turn, or
@@ -140,6 +143,7 @@ js/
   players.js     Adding, editing, and removing players; toggling their effects
   reorder.js     Drag-and-drop and arrow-key reordering of players
   toolbar.js     Next turn, New game, Copy share link, Hide roles
+  wakelock.js    Keep screen on (Screen Wake Lock)
   managers.js    The Roles and Status effects panels
   main.js        Start-up
 LICENSE          MIT license

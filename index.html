@@ -14,6 +14,7 @@
     <script defer src="js/players.js"></script>
     <script defer src="js/reorder.js"></script>
     <script defer src="js/toolbar.js"></script>
+    <script defer src="js/wakelock.js"></script>
     <script defer src="js/managers.js"></script>
     <script defer src="js/main.js"></script>
   </head>
@@ -63,6 +64,16 @@
           title="Copy a link containing the whole game"
         >
           Copy share link
+        </button>
+        <button
+          type="button"
+          class="btn"
+          id="awakeBtn"
+          aria-pressed="false"
+          title="Stop the screen from dimming or locking during the game"
+          hidden
+        >
+          Keep screen on
         </button>
         <span class="save-status" id="saveStatus">Saved</span>
       </div>

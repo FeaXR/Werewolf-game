@@ -46,9 +46,7 @@ function setRolesHidden(hidden) {
   document.body.classList.toggle("roles-hidden", hidden);
   $("hideRolesBtn").setAttribute("aria-pressed", hidden);
   $("hideRolesBtn").textContent = hidden ? "Show roles" : "Hide roles";
-  try {
-    localStorage.setItem(PREFS_KEY, JSON.stringify({ hidden }));
-  } catch {}
+  setPref("hidden", hidden);
 }
 
 $("hideRolesBtn").addEventListener("click", () =>

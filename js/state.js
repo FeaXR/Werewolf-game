@@ -77,6 +77,24 @@ function loadState() {
 
 let state = loadState();
 
+// Per-device preferences (not part of the game or share links).
+function loadPrefs() {
+  try {
+    return JSON.parse(localStorage.getItem(PREFS_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+
+function setPref(key, value) {
+  try {
+    localStorage.setItem(
+      PREFS_KEY,
+      JSON.stringify({ ...loadPrefs(), [key]: value })
+    );
+  } catch {}
+}
+
 let saveTimer;
 function save() {
   try {
