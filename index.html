@@ -6,6 +6,11 @@
     <meta name="color-scheme" content="dark light" />
     <title>Werewolf</title>
     <link rel="stylesheet" href="style.css" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+    <meta name="theme-color" content="#11131c" />
+    <meta name="apple-mobile-web-app-title" content="Werewolf" />
     <!-- Plain (non-module) scripts so the page also works when opened from
          disk. They share globals and run in this order, so keep it. -->
     <script defer src="js/state.js"></script>
@@ -15,6 +20,7 @@
     <script defer src="js/reorder.js"></script>
     <script defer src="js/toolbar.js"></script>
     <script defer src="js/wakelock.js"></script>
+    <script defer src="js/install.js"></script>
     <script defer src="js/managers.js"></script>
     <script defer src="js/main.js"></script>
   </head>
@@ -28,6 +34,22 @@
     </header>
 
     <main>
+      <div class="install-hint" id="installHint" hidden>
+        <span id="installHintText"></span>
+        <button type="button" class="btn small primary" id="installBtn" hidden>
+          Install
+        </button>
+        <button
+          type="button"
+          class="chip-remove"
+          id="installHintClose"
+          aria-label="Dismiss install hint"
+          title="Dismiss"
+        >
+          ×
+        </button>
+      </div>
+
       <div class="toolbar">
         <button
           type="button"

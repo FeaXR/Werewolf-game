@@ -49,6 +49,9 @@ one HTML file, one stylesheet, and a few plain JavaScript files.
   seconds.
 - **Keyboard friendly**: press <kbd>Enter</kbd> in a name field to move to the
   next player. On the last player, it adds a new player.
+- **Installable and offline**: add it to your home screen to use it like an
+  app. After the first visit it works without a connection (see
+  [Install it as an app](#install-it-as-an-app-optional)).
 - **Responsive, light and dark**: on narrow screens each player becomes a
   card. The page follows your system's light or dark setting.
 
@@ -59,6 +62,21 @@ one HTML file, one stylesheet, and a few plain JavaScript files.
 The board is published with GitHub Pages at
 <https://feaxr.github.io/Werewolf-game/>. Open it on whichever device you're
 moderating from. Nothing needs to be installed.
+
+### Install it as an app (optional)
+
+Installing puts an icon on your home screen. The board then opens
+full-screen and works without a connection.
+
+- **iPhone / iPad:** open the site in Safari (or Chrome, Edge, or Firefox on
+  iOS 16.4+), tap **Share**, then **Add to Home Screen**. iOS doesn't let
+  websites prompt for this, so the page shows these steps as a hint
+  instead.
+- **Android, and Chrome / Edge on desktop:** use the **Install** button in
+  the banner at the top of the page, or *Install app* in the browser menu.
+
+On iPhone, the installed app keeps its own saved data, separate from Safari.
+To move a game in progress between them, use **Copy share link**.
 
 ### Run it locally
 
@@ -136,6 +154,9 @@ site's data or open the page in a private window.
 ```
 index.html       Page markup; loads the stylesheet and scripts
 style.css        Theme, layout, and responsive styles
+manifest.webmanifest   App name, icons, and colours used when installed
+sw.js            Service worker: offline support (network first, cache as fallback)
+icons/           App icons, Apple touch icon, and favicon
 js/
   state.js       Defaults, the game state, loading (share link / localStorage) and saving
   ui.js          DOM helpers and the undo toast
@@ -144,6 +165,7 @@ js/
   reorder.js     Drag-and-drop and arrow-key reordering of players
   toolbar.js     Next turn, New game, Copy share link, Hide roles
   wakelock.js    Keep screen on (Screen Wake Lock)
+  install.js     Registers the service worker; shows the install hint
   managers.js    The Roles and Status effects panels
   main.js        Start-up
 LICENSE          MIT license
@@ -162,6 +184,10 @@ LICENSE          MIT license
   browsers block modules on pages opened from `file://`. They share global
   variables and run in the order `index.html` lists them, so a new script
   must go after any script it depends on. Keep `main.js` last.
+- **When you add a file**, also add it to `FILES` in `sw.js` and increase the
+  `CACHE` version (`werewolf-v1` → `werewolf-v2`). Otherwise the new file
+  won't be available offline. Edits to existing files don't need this, since
+  the service worker always tries the network first.
 
 ## Contributing
 

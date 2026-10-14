@@ -569,3 +569,26 @@ h1::before {
     margin-left: 0;
   }
 }
+
+/* ------------------------------
+   INSTALL HINT
+------------------------------ */
+.install-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  background: var(--chip-on);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+}
+
+.install-hint[hidden] {
+  display: none;
+}
+
+.install-hint span {
+  flex: 1;
+}
