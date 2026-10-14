@@ -131,6 +131,10 @@ h1::before {
   font-variant-numeric: tabular-nums;
 }
 
+.summary .turn strong {
+  color: var(--accent);
+}
+
 .summary .alive strong {
   color: var(--alive);
 }
@@ -354,6 +358,35 @@ h1::before {
   color: var(--accent);
 }
 
+/* One-turn effects get a dashed outline; Next turn clears them. */
+.chip.toggle.lasts-turn {
+  border-style: dashed;
+}
+
+.chip-duration {
+  padding: 1px 7px;
+  font: inherit;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.chip-duration.lasts-turn {
+  border-style: dashed;
+}
+
+.chip-duration.lasts-game {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.chip-duration:hover {
+  color: var(--text);
+}
+
 .chip-list {
   display: flex;
   flex-wrap: wrap;
@@ -420,6 +453,17 @@ h1::before {
   gap: 8px;
 }
 
+.add-form .duration-select {
+  width: auto;
+  flex-shrink: 0;
+}
+
+.hint {
+  margin: 10px 0 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
 /* ------------------------------
    TOAST
 ------------------------------ */
@@ -464,6 +508,18 @@ h1::before {
 
   .effects:empty {
     display: none;
+  }
+
+  .add-form {
+    flex-wrap: wrap;
+  }
+
+  .add-form input[type="text"] {
+    flex: 1 1 100%;
+  }
+
+  .add-form .duration-select {
+    flex: 1;
   }
 
   .save-status {

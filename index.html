@@ -18,7 +18,15 @@
 
     <main>
       <div class="toolbar">
-        <button type="button" class="btn primary" id="addPlayerBtn">
+        <button
+          type="button"
+          class="btn primary"
+          id="nextTurnBtn"
+          title="Advance the turn and clear effects that last one turn"
+        >
+          Next turn →
+        </button>
+        <button type="button" class="btn" id="addPlayerBtn">
           + Add player
         </button>
         <button
@@ -36,7 +44,7 @@
           id="resetBtn"
           title="Clear roles, deaths and effects but keep player names"
         >
-          New round
+          New game
         </button>
         <button
           type="button"
@@ -84,8 +92,21 @@
               aria-label="New status effect"
               autocomplete="off"
             />
+            <select
+              id="newStatusDuration"
+              class="duration-select"
+              aria-label="How long the effect lasts"
+            >
+              <option value="turn">1 turn</option>
+              <option value="game">Whole game</option>
+            </select>
             <button type="submit" class="btn">Add</button>
           </form>
+          <p class="hint">
+            Effects with a dashed outline last one turn and are cleared by
+            <strong>Next turn</strong>. Click an effect's duration to change
+            it.
+          </p>
           <ul class="chip-list" id="statusList"></ul>
         </details>
       </section>
@@ -113,9 +134,16 @@
         "Chupakabra",
         "Vacuum salesman",
       ];
-      const DEFAULT_EFFECTS = ["Has Vacuum"];
+      // duration: "game" lasts until the game ends, "turn" is cleared by Next turn.
+      const DEFAULT_EFFECTS = [
+        { name: "Has Vacuum", duration: "game" },
+        { name: "Infected", duration: "game" },
+        { name: "Protected", duration: "turn" },
+        { name: "Muted", duration: "turn" },
+      ];
 
       // One object holds the whole game; everything is rendered from it.
+      // state = { turn, roles, effects, players }
       // player = { name, role, dead, effects: [effect names] }
       let state = loadState();
 
@@ -152,51 +180,31 @@
           ? raw.roles.map(String)
           : [...DEFAULT_ROLES];
         const effects = Array.isArray(raw?.effects)
-          ? raw.effects.map(String)
-          : [...DEFAULT_EFFECTS];
+          ? raw.effects.map((e) => ({
+              name: String(e?.name ?? ""),
+              duration: e?.duration === "game" ? "game" : "turn",
+            })).filter((e) => e.name)
+          : DEFAULT_EFFECTS.map((e) => ({ ...e }));
+        const effectNames = effects.map((e) => e.name);
         const players = Array.isArray(raw?.players)
           ? raw.players.map((p) => ({
               name: String(p?.name ?? ""),
               role: roles.includes(p?.role) ? p.role : "",
               dead: !!p?.dead,
               effects: Array.isArray(p?.effects)
-                ? p.effects.filter((e) => effects.includes(e))
+                ? p.effects.filter((e) => effectNames.includes(e))
                 : [],
             }))
           : [newPlayer()];
-        return { roles, effects, players };
-      }
-
-      // Links saved by the original version of the page used three params.
-      function fromLegacyParams(params) {
-        const slug = (s) => s.replace(/\s+/g, "_").toLowerCase();
-        const roles = JSON.parse(params.get("roleData") || "null") ?? [
-          ...DEFAULT_ROLES,
-        ];
-        const effects = JSON.parse(params.get("statusData") || "null") ?? [
-          ...DEFAULT_EFFECTS,
-        ];
-        const rows = JSON.parse(params.get("playerData") || "[]");
-        const players = rows.map((row, i) => ({
-          name: row.name || "",
-          role: roles.find((r) => r.toLowerCase() === row.role) || "",
-          dead: !!row.isDead,
-          effects: effects.filter(
-            (e) => row.effects?.[`status_${slug(e)}_${i + 1}`]
-          ),
-        }));
-        return { roles, effects, players };
+        const turn = Math.max(1, parseInt(raw?.turn, 10) || 1);
+        return { turn, roles, effects, players };
       }
 
       function loadState() {
         const params = new URLSearchParams(location.search);
         try {
-          let fromUrl = null;
-          if (params.has("game")) fromUrl = JSON.parse(params.get("game"));
-          else if (params.has("playerData") || params.has("roleData"))
-            fromUrl = fromLegacyParams(params);
-
-          if (fromUrl) {
+          if (params.has("game")) {
+            const fromUrl = JSON.parse(params.get("game"));
             // Drop the params so a refresh doesn't overwrite later edits.
             history.replaceState(null, "", location.pathname);
             return normalize(fromUrl);
@@ -279,6 +287,10 @@
         const total = state.players.length;
         const dead = state.players.filter((p) => p.dead).length;
         $("summary").replaceChildren(
+          el("span", { className: "stat turn" }, [
+            "Turn ",
+            el("strong", { textContent: state.turn }),
+          ]),
           el("span", { className: "stat" }, [
             el("strong", { textContent: total }),
             ` player${total === 1 ? "" : "s"}`,
@@ -332,13 +344,14 @@
             );
             roleSelect.value = player.role;
 
-            const effects = state.effects.map((effect) =>
+            const effects = state.effects.map(({ name, duration }) =>
               el("button", {
                 type: "button",
-                className: "chip toggle",
-                textContent: effect,
-                "aria-pressed": player.effects.includes(effect),
-                dataset: { action: "effect", effect },
+                className: `chip toggle lasts-${duration}`,
+                textContent: name,
+                title: duration === "turn" ? "Lasts one turn" : "Lasts the whole game",
+                "aria-pressed": player.effects.includes(name),
+                dataset: { action: "effect", effect: name },
               })
             );
 
@@ -388,9 +401,20 @@
       function renderList(kind, items, listEl, countEl) {
         countEl.textContent = items.length;
         listEl.replaceChildren(
-          ...items.map((item, index) =>
-            el("li", { className: "chip" }, [
+          ...items.map((entry, index) => {
+            const item = kind === "role" ? entry : entry.name;
+            return el("li", { className: "chip" }, [
               item,
+              kind === "status" &&
+                el("button", {
+                  type: "button",
+                  className: `chip-duration lasts-${entry.duration}`,
+                  textContent: entry.duration === "turn" ? "1 turn" : "game",
+                  title: `${item} lasts ${
+                    entry.duration === "turn" ? "one turn" : "the whole game"
+                  }. Click to change.`,
+                  dataset: { index },
+                }),
               el("button", {
                 type: "button",
                 className: "chip-remove",
@@ -399,8 +423,8 @@
                 "aria-label": `Remove ${item}`,
                 dataset: { kind, index },
               }),
-            ])
-          )
+            ]);
+          })
         );
       }
 
@@ -477,11 +501,32 @@
       /* ------------------------------
      TOOLBAR
   ------------------------------ */
+      $("nextTurnBtn").addEventListener("click", () => {
+        snapshot();
+        const turnOnly = state.effects
+          .filter((e) => e.duration === "turn")
+          .map((e) => e.name);
+        let cleared = 0;
+        state.players.forEach((p) => {
+          const kept = p.effects.filter((name) => !turnOnly.includes(name));
+          cleared += p.effects.length - kept.length;
+          p.effects = kept;
+        });
+        state.turn++;
+        commit();
+        toast(
+          `Turn ${state.turn}` +
+            (cleared ? `: cleared ${cleared} one-turn effect${cleared === 1 ? "" : "s"}` : ""),
+          true
+        );
+      });
+
       $("resetBtn").addEventListener("click", () => {
         snapshot();
         state.players = state.players.map((p) => newPlayer(p.name));
+        state.turn = 1;
         commit();
-        toast("New round: roles, deaths and effects cleared", true);
+        toast("New game: roles, deaths and effects cleared", true);
       });
 
       $("shareBtn").addEventListener("click", async () => {
@@ -514,28 +559,42 @@
       /* ------------------------------
      ROLE & STATUS EFFECT MANAGERS
   ------------------------------ */
-      function setupManager(kind, form, input, listEl) {
+      // Roles are plain strings; effects are { name, duration } objects.
+      function setupManager(kind, form, input, listEl, durationSelect) {
         const items = () => (kind === "role" ? state.roles : state.effects);
+        const nameOf = (item) => (kind === "role" ? item : item.name);
 
         form.addEventListener("submit", (e) => {
           e.preventDefault();
           const value = input.value.trim();
           if (!value) return;
-          if (items().some((x) => sameText(x, value))) {
+          if (items().some((x) => sameText(nameOf(x), value))) {
             toast(`"${value}" already exists`);
             input.select();
             return;
           }
-          items().push(value);
+          items().push(
+            kind === "role"
+              ? value
+              : { name: value, duration: durationSelect.value }
+          );
           input.value = "";
           commit();
         });
 
         listEl.addEventListener("click", (e) => {
+          const toggle = e.target.closest(".chip-duration");
+          if (toggle) {
+            const effect = items()[Number(toggle.dataset.index)];
+            effect.duration = effect.duration === "turn" ? "game" : "turn";
+            commit();
+            return;
+          }
+
           const button = e.target.closest(".chip-remove");
           if (!button) return;
           const index = Number(button.dataset.index);
-          const removed = items()[index];
+          const removed = nameOf(items()[index]);
 
           snapshot();
           items().splice(index, 1);
@@ -555,7 +614,8 @@
         "status",
         $("statusForm"),
         $("newStatusInput"),
-        $("statusList")
+        $("statusList"),
+        $("newStatusDuration")
       );
 
       /* ------------------------------
