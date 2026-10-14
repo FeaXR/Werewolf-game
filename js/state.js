@@ -2,7 +2,7 @@
 //
 // One object holds the whole game; everything is rendered from it.
 // state = { turn, roles, effects, players }
-// player = { name, role, dead, effects: [effect names] }
+// player = { name, role, dead, effects: [effect names], notes }
 
 const STORAGE_KEY = "werewolf-game";
 const PREFS_KEY = "werewolf-prefs";
@@ -24,7 +24,7 @@ const DEFAULT_EFFECTS = [
 ];
 
 function newPlayer(name = "") {
-  return { name, role: "", dead: false, effects: [] };
+  return { name, role: "", dead: false, effects: [], notes: "" };
 }
 
 function normalize(raw) {
@@ -46,6 +46,7 @@ function normalize(raw) {
         effects: Array.isArray(p?.effects)
           ? p.effects.filter((e) => effectNames.includes(e))
           : [],
+        notes: String(p?.notes ?? ""),
       }))
     : [newPlayer()];
   const turn = Math.max(1, parseInt(raw?.turn, 10) || 1);

@@ -1,4 +1,4 @@
-// Player list: adding, editing, toggling effects, removing.
+// Player list: adding, editing, toggling effects, notes, removing.
 
 function addPlayer({ focus = true } = {}) {
   state.players.push(newPlayer());
@@ -18,8 +18,13 @@ function playerIndex(target) {
 
 // Typing updates the data without re-rendering so focus is kept.
 playerList.addEventListener("input", (e) => {
-  if (!e.target.matches(".name")) return;
-  state.players[playerIndex(e.target)].name = e.target.value;
+  const player = state.players[playerIndex(e.target)];
+  if (e.target.matches(".name")) player.name = e.target.value;
+  else if (e.target.matches(".notes")) {
+    player.notes = e.target.value;
+    const toggle = e.target.closest("li").querySelector(".notes-toggle");
+    toggle.classList.toggle("has-notes", !!player.notes);
+  } else return;
   save();
 });
 
@@ -56,6 +61,15 @@ playerList.addEventListener("click", (e) => {
         : [...player.effects, effect];
       break;
     }
+    case "notes":
+      // Close an empty box; a box with text stays open and gets focus.
+      if (openNotes.has(player) && !player.notes) openNotes.delete(player);
+      else openNotes.add(player);
+      commit();
+      playerList
+        .querySelector(`li[data-index="${index}"] .notes`)
+        ?.focus();
+      return;
     case "remove":
       snapshot();
       state.players.splice(index, 1);

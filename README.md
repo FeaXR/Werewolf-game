@@ -15,6 +15,9 @@ one HTML file, one stylesheet, and a few plain JavaScript files.
 
 - **Player list**: add as many players as you need, each with a name, a
   role, an alive/dead toggle, and any number of status effects.
+- **Player notes**: tap ✎ on a player to jot down claims, votes, or
+  suspicions. A dot on ✎ shows which players have notes. Notes are blurred by
+  *Hide roles* and cleared by *New game*.
 - **Reorder players**: drag a player's number (⋮⋮ 1) to move them, using a
   mouse or touch. You can also focus the number and press <kbd>↑</kbd> /
   <kbd>↓</kbd>. This makes it easy to match the order people sit around the
@@ -146,7 +149,7 @@ site's data or open the page in a private window.
 - Links from the very first version of the page (with `playerData`,
   `roleData`, and `statusData` parameters) are no longer supported.
 
-> **Note:** a share link contains every role. Only send it to people who are
+> **Note:** a share link contains every role and note. Only send it to people who are
 > allowed to know them.
 
 ## Project structure
@@ -161,7 +164,7 @@ js/
   state.js       Defaults, the game state, loading (share link / localStorage) and saving
   ui.js          DOM helpers and the undo toast
   render.js      Draws the summary, tally, player list, and manager lists from state
-  players.js     Adding, editing, and removing players; toggling their effects
+  players.js     Adding, editing, and removing players; effects and notes
   reorder.js     Drag-and-drop and arrow-key reordering of players
   toolbar.js     Next turn, New game, Copy share link, Hide roles
   wakelock.js    Keep screen on (Screen Wake Lock)
@@ -176,7 +179,7 @@ LICENSE          MIT license
 - The whole game lives in one `state` object:
   `{ turn, roles, effects, players }`. Each effect is `{ name, duration }`,
   where `duration` is `"turn"` or `"game"`. Each player is
-  `{ name, role, dead, effects }`, where `effects` holds effect names.
+  `{ name, role, dead, effects, notes }`, where `effects` holds effect names.
 - After every change, `commit()` saves `state` and redraws the page from it.
   Name fields are the exception: they update `state` as you type and don't
   redraw, so the text cursor stays where it is.

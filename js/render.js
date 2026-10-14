@@ -1,5 +1,9 @@
 // Draws the summary, player list and manager lists from `state`.
 
+// Players whose (still empty) notes box was opened. A note with text is
+// always shown, so this only matters until something is typed.
+const openNotes = new WeakSet();
+
 function render() {
   renderSummary();
   renderPlayers();
@@ -79,6 +83,8 @@ function renderPlayers() {
         })
       );
 
+      const notesOpen = !!player.notes || openNotes.has(player);
+
       return el(
         "li",
         {
@@ -113,12 +119,30 @@ function renderPlayers() {
           }),
           el("button", {
             type: "button",
+            className:
+              "btn icon notes-toggle" + (player.notes ? " has-notes" : ""),
+            textContent: "✎︎", // text style, not emoji
+            title: player.notes ? "Edit notes" : "Add notes",
+            "aria-label": `Notes for player ${index + 1}`,
+            "aria-expanded": notesOpen,
+            dataset: { action: "notes" },
+          }),
+          el("button", {
+            type: "button",
             className: "btn icon remove",
             textContent: "×",
             title: "Remove player",
             "aria-label": `Remove player ${index + 1}`,
             dataset: { action: "remove" },
           }),
+          notesOpen &&
+            el("textarea", {
+              className: "notes",
+              value: player.notes,
+              rows: 2,
+              placeholder: "Notes: claims, votes, suspicions…",
+              "aria-label": `Notes for player ${index + 1}`,
+            }),
         ]
       );
     })
