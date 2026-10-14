@@ -22,7 +22,9 @@
     <script defer src="js/wakelock.js"></script>
     <script defer src="js/install.js"></script>
     <script defer src="js/timer.js"></script>
+    <script defer src="js/deal.js"></script>
     <script defer src="js/managers.js"></script>
+    <script defer src="js/setups.js"></script>
     <script defer src="js/main.js"></script>
   </head>
   <body>
@@ -62,6 +64,14 @@
         </button>
         <button type="button" class="btn" id="addPlayerBtn">
           + Add player
+        </button>
+        <button
+          type="button"
+          class="btn"
+          id="dealBtn"
+          title="Randomly hand out roles, then pass the phone around"
+        >
+          Deal roles
         </button>
         <button
           type="button"
@@ -173,8 +183,79 @@
           </p>
           <ul class="chip-list" id="statusList"></ul>
         </details>
+
+        <details class="panel" id="setupManager">
+          <summary>
+            Saved setups <span class="count" id="setupCount"></span>
+          </summary>
+          <p class="hint">
+            Save the current roles, status effects and deal counts to reuse
+            later. Setups are stored on this device; export them to use on
+            another one.
+          </p>
+          <form class="add-form" id="setupForm">
+            <input
+              type="text"
+              id="setupName"
+              placeholder="Name this setup"
+              aria-label="Setup name"
+              autocomplete="off"
+              maxlength="60"
+            />
+            <button type="submit" class="btn">Save current</button>
+          </form>
+          <ul class="setup-list" id="setupList"></ul>
+          <div class="setup-io">
+            <button type="button" class="btn small" id="exportSetups">
+              Export…
+            </button>
+            <button type="button" class="btn small" id="importSetups">
+              Import…
+            </button>
+            <input
+              type="file"
+              id="importFile"
+              accept=".json,application/json"
+              hidden
+            />
+          </div>
+        </details>
       </section>
     </main>
+
+    <dialog class="dialog" id="dealDialog" aria-labelledby="dealTitle">
+      <h2 id="dealTitle">Deal roles</h2>
+      <p class="hint">
+        Choose how many of each role to hand out. Everyone else gets the
+        role below. Roles are shuffled randomly onto the players.
+      </p>
+      <ul class="deal-list" id="dealCounts"></ul>
+      <label class="deal-fill">
+        Everyone else
+        <select id="dealFill"></select>
+      </label>
+      <p class="deal-summary" id="dealSummary" aria-live="polite"></p>
+      <label class="check">
+        <input type="checkbox" id="dealReveal" checked />
+        Then pass the phone so each player sees their role
+      </label>
+      <div class="dialog-actions">
+        <button type="button" class="btn link" id="revealCurrentBtn">
+          Just show current roles
+        </button>
+        <button type="button" class="btn" id="dealCancel">Cancel</button>
+        <button type="button" class="btn primary" id="dealConfirm">Deal</button>
+      </div>
+    </dialog>
+
+    <dialog class="dialog reveal" id="revealDialog" aria-labelledby="revealName">
+      <p class="reveal-step" id="revealStep"></p>
+      <h2 id="revealName"></h2>
+      <p class="reveal-role" id="revealRole" hidden></p>
+      <p class="hint" id="revealHint"></p>
+      <button type="button" class="btn primary big" id="revealNext"></button>
+      <button type="button" class="btn link" id="revealStop">Stop</button>
+    </dialog>
 
     <div class="toast" id="toast" role="status" hidden>
       <span id="toastText"></span>
