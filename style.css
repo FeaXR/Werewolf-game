@@ -245,7 +245,7 @@ h1::before {
 
 .player {
   display: grid;
-  grid-template-columns: 28px minmax(140px, 2fr) minmax(130px, 1.5fr) 3fr auto auto;
+  grid-template-columns: 40px minmax(140px, 2fr) minmax(130px, 1.5fr) 3fr auto auto;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
@@ -261,6 +261,48 @@ h1::before {
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
   text-align: right;
+}
+
+/* The number doubles as the drag handle for reordering. */
+.handle {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  height: 100%;
+  min-height: 36px;
+  padding: 0 4px;
+  font: inherit;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: grab;
+  touch-action: none; /* let touch drags reorder instead of scrolling */
+}
+
+.handle::before {
+  content: "⋮⋮";
+  letter-spacing: -3px;
+  opacity: 0.45;
+}
+
+.handle:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.player.dragging {
+  position: relative;
+  z-index: 1;
+  border-color: var(--accent);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  transform: scale(1.01);
+}
+
+.is-dragging,
+.is-dragging * {
+  cursor: grabbing !important;
+  user-select: none;
 }
 
 .player.is-dead {
@@ -492,7 +534,7 @@ h1::before {
 ------------------------------ */
 @media (max-width: 760px) {
   .player {
-    grid-template-columns: 24px 1fr auto auto;
+    grid-template-columns: 36px 1fr auto auto;
     grid-template-areas:
       "num name life remove"
       ".   role role role"

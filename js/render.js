@@ -86,9 +86,12 @@ function renderPlayers() {
           dataset: { index },
         },
         [
-          el("span", {
-            className: "player-number",
+          el("button", {
+            type: "button",
+            className: "player-number handle",
             textContent: index + 1,
+            title: "Drag to reorder, or focus and use ↑ ↓",
+            "aria-label": `Move player ${index + 1}. Use arrow keys to reorder.`,
           }),
           el("input", {
             type: "text",
