@@ -4,7 +4,7 @@
 // cached copy is only used when the network fails. When adding a file the
 // page needs, add it to FILES and bump CACHE so offline use keeps working.
 
-const CACHE = "werewolf-v4";
+const CACHE = "werewolf-v5";
 const FILES = [
   "./",
   "index.html",

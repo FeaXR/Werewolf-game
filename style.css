@@ -71,7 +71,8 @@ body {
 }
 
 main,
-.page-header {
+.page-header,
+.site-footer {
   max-width: 1100px;
   margin: 0 auto;
 }
@@ -552,6 +553,27 @@ h1::before {
   margin: 10px 0 0;
   font-size: 0.85rem;
   color: var(--text-muted);
+}
+
+/* ------------------------------
+   FOOTER
+------------------------------ */
+.site-footer {
+  margin-top: 32px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.site-footer a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.site-footer a:hover {
+  text-decoration: underline;
 }
 
 /* ------------------------------
